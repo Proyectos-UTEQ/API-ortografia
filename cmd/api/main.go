@@ -40,9 +40,13 @@ func main() {
 	app := fiber.New()
 	api := app.Group("/api")
 
+	auth := api.Group("/auth")
+
 	userHandler := handlers.NewUserHandler()
 
-	api.Get("/users", userHandler.Login)
+	// Routes for auth users
+	auth.Post("/login", userHandler.Login)
+	auth.Post("/register", userHandler.Register)
 
 	app.Listen(":3000")
 }

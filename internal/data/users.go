@@ -2,6 +2,7 @@ package data
 
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/db"
+	"Proyectos-UTEQ/api-ortografia/pkg/types"
 	"time"
 
 	"gorm.io/gorm"
@@ -41,17 +42,13 @@ func (User) TableName() string {
 	return "users"
 }
 
-func Login() (bool, error) {
-	db.DB.Create(&User{
-		FirstName:    "admin",
-		LastName:     "admin",
-		Email:        "roberto@gmail.com",
-		Password:     "admin",
-		BirthDate:    time.Now(),
-		PointsEarned: 0,
-		Whatsapp:     "",
-		Telegram:     "",
-		URLAvatar:    "",
-	})
-	return true, nil
+func Login(login types.Login) (*User, bool, error) {
+	var user User
+	result := db.DB.First(&user, "email = ?", login.Email)
+
+	if result.Error != nil {
+		return nil, false, result.Error
+	}
+
+	return &user, user.Password == login.Password, nil
 }
