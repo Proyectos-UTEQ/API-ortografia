@@ -1,8 +1,8 @@
 build:
-	@go build -o bin/art-digital cmd/api/main.go
+	@go build -o bin/api-ortografia cmd/api/main.go
 
 run: build
-	@./bin/art-digital
+	@./bin/api-ortografia
 
 seed: 
 	@go run cmd/seed/main.go
