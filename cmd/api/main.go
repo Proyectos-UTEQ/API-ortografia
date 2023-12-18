@@ -13,24 +13,30 @@ import (
 func main() {
 	config := viper.New()
 
+	// Read environment variables
 	config.AutomaticEnv()
 
+	// Read the config file
 	config.SetConfigName("config")
 	config.SetConfigType("yaml")
 	config.AddConfigPath(".")
 
+	// Load the config
 	err := config.ReadInConfig()
 	if err != nil {
 		panic(err)
 	}
 
-	database := db.InitDB(config)
+	// Connect to the database
+	database := db.ConnectDB(config)
+
 	// Migrate the schema
 	err = database.AutoMigrate(&data.User{})
 	if err != nil {
 		fmt.Println(err)
 	}
 
+	// Create fiber app
 	app := fiber.New()
 	api := app.Group("/api")
 
