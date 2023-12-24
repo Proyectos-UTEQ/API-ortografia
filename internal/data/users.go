@@ -3,8 +3,10 @@ package data
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/db"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
+	"errors"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -42,13 +44,64 @@ func (User) TableName() string {
 	return "users"
 }
 
-func Login(login types.Login) (*User, bool, error) {
+func Login(login types.Login) (*types.UserAPI, bool, error) {
 	var user User
 	result := db.DB.First(&user, "email = ?", login.Email)
 
+	// Controlar el error de record not found.
 	if result.Error != nil {
-		return nil, false, result.Error
+		return nil, false, errors.New("las credenciales son incorrectas")
 	}
 
-	return &user, user.Password == login.Password, nil
+	// Comparar las contraseñas con un hash.
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(login.Password))
+	if err != nil {
+		return nil, false, errors.New("las credenciales son incorrectas")
+	}
+
+	// Convertir a un usuario api
+	userAPI := &types.UserAPI{
+		ID:           user.ID,
+		FirstName:    user.FirstName,
+		LastName:     user.LastName,
+		Email:        user.Email,
+		Password:     "",
+		BirthDate:    user.BirthDate.String(),
+		PointsEarned: user.PointsEarned,
+		Whatsapp:     user.Whatsapp,
+		Telegram:     user.Telegram,
+		URLAvatar:    user.URLAvatar,
+		Status:       string(user.Status),
+		TypeUser:     string(user.TypeUser),
+	}
+
+	return userAPI, true, nil
+}
+
+func Register(userAPI *types.UserAPI) error {
+
+	// crear un hash apartir de la contraseña
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userAPI.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	// rellenamos los datos con la entidad.
+	user := User{
+		FirstName: userAPI.FirstName,
+		Email:     userAPI.Email,
+		Password:  string(hashedPassword),
+		Status:    Actived,
+		TypeUser:  TypeUser(userAPI.TypeUser),
+	}
+
+	result := db.DB.Create(&user)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	userAPI.ID = user.ID
+
+	return nil
 }

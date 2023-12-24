@@ -33,7 +33,6 @@ services:
   db:
     container_name: db-ortografia
     image: postgres:15.3
-    restart: always
     ports:
       - 5432:5432
     volumes:
@@ -46,7 +45,6 @@ services:
   
   pdAdmin:
     image: dpage/pgadmin4
-    restart: always
     depends_on:
       - db
     ports:

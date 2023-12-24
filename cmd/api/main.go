@@ -5,6 +5,7 @@ import (
 	"Proyectos-UTEQ/api-ortografia/internal/db"
 	"Proyectos-UTEQ/api-ortografia/internal/handlers"
 	"fmt"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/viper"
@@ -20,11 +21,12 @@ func main() {
 	config.SetConfigName("config")
 	config.SetConfigType("yaml")
 	config.AddConfigPath(".")
+	config.AddConfigPath("/workspaces/api-ortografia")
 
 	// Load the config
 	err := config.ReadInConfig()
 	if err != nil {
-		panic(err)
+		log.Println(err)
 	}
 
 	// Connect to the database
@@ -42,11 +44,11 @@ func main() {
 
 	auth := api.Group("/auth")
 
-	userHandler := handlers.NewUserHandler()
+	userHandler := handlers.NewUserHandler(config)
 
 	// Routes for auth users
-	auth.Post("/login", userHandler.Login)
-	auth.Post("/register", userHandler.Register)
+	auth.Post("/sign-in", userHandler.HandlerSignin)
+	auth.Post("/sign-up", userHandler.HandlerSignup)
 
 	app.Listen(":3000")
 }
