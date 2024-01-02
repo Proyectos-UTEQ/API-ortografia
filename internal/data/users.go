@@ -4,6 +4,7 @@ import (
 	"Proyectos-UTEQ/api-ortografia/internal/db"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
 	"errors"
+	"fmt"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -103,5 +104,42 @@ func Register(userAPI *types.UserAPI) error {
 
 	userAPI.ID = user.ID
 
+	return nil
+}
+
+func ExisteEmail(email string) (bool, types.UserAPI) {
+	var user User
+	result := db.DB.First(&user, "email = ?", email)
+	if result.Error != nil {
+		return false, types.UserAPI{}
+	}
+	return true, types.UserAPI{
+		ID:           user.ID,
+		FirstName:    user.FirstName,
+		LastName:     user.LastName,
+		Email:        user.Email,
+		BirthDate:    user.BirthDate.String(),
+		PointsEarned: user.PointsEarned,
+		Whatsapp:     user.Whatsapp,
+		Telegram:     user.Telegram,
+		URLAvatar:    user.URLAvatar,
+		Status:       string(user.Status),
+		TypeUser:     string(user.TypeUser),
+	}
+}
+
+func UpdatePassword(userid uint, newPassword string) error {
+	// hash de la contraseña
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	// actualizar la contraseña en la base de datos.
+	result := db.DB.Model(&User{}).Where("id = ?", userid).Update("password", string(hashedPassword))
+	fmt.Println("Rows affected: ", result.RowsAffected)
+	if result.Error != nil {
+		return result.Error
+	}
 	return nil
 }
