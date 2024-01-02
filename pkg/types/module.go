@@ -5,13 +5,13 @@ type Module struct {
 	ID               uint    `json:"id"`
 	CreatedAt        string  `json:"created_at"`
 	UpdatedAt        string  `json:"updated_at"`
-	CreateBy         UserAPI `json:"create_by"`
-	Title            string  `json:"title"`
-	ShortDescription string  `json:"short_description"`
-	TextRoot         string  `json:"text_root"`
-	ImgBackURL       string  `json:"img_back_url"`
-	Difficulty       string  `json:"difficulty"`
-	PointsToEarn     string  `json:"points_to_earn"`
+	CreateBy         UserAPI `json:"create_by" validate:"-"`
+	Title            string  `json:"title" validate:"required,min=3,max=100"`
+	ShortDescription string  `json:"short_description" validate:"required,min=3,max=100"`
+	TextRoot         string  `json:"text_root" `
+	ImgBackURL       string  `json:"img_back_url" validate:"required"`
+	Difficulty       string  `json:"difficulty" validate:"required,oneof=easy medium hard"`
+	PointsToEarn     int     `json:"points_to_earn" validate:"required"`
 	Index            int     `json:"index"`
 	IsPublic         bool    `json:"is_public"`
 }
