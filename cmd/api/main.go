@@ -58,10 +58,10 @@ func main() {
 	// esto debe resivier un token.
 	auth.Put("/change-password", userHandler.HandlerChangePassword)
 
-	api.Get("/protegida", jwtHandler.JWTMiddleware, func(c *fiber.Ctx) error {
+	api.Get("/protegida", jwtHandler.JWTMiddleware, handlers.Authorization("admin", "profesor"), func(c *fiber.Ctx) error {
 		claims := handlers.GetClaims(c)
 		fmt.Println(claims.UserAPI)
-		return c.SendString("protegida")
+		return c.SendString("ruta protegida, has tenido acceso " + claims.UserAPI.FirstName)
 	})
 
 	app.Listen(":3000")

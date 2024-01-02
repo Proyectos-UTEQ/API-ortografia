@@ -50,3 +50,17 @@ func (h *JWTHandler) JWTMiddleware(c *fiber.Ctx) error {
 func GetClaims(c *fiber.Ctx) *types.UserClaims {
 	return c.Locals("user").(*types.UserClaims)
 }
+
+// controla la autorización de los usuario por rol.
+func Authorization(allowedRoles ...string) func(c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		claims := GetClaims(c)
+		for _, role := range allowedRoles {
+			if role == claims.TypeUser {
+				return c.Next()
+			}
+		}
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"status": "error", "message": "No autorizado"})
+	}
+
+}
