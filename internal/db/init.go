@@ -10,7 +10,7 @@ import (
 
 var DB *gorm.DB
 
-func InitDB(viper *viper.Viper) *gorm.DB {
+func ConnectDB(viper *viper.Viper) *gorm.DB {
 
 	// Get config
 	host := viper.GetString("DB_HOST")
