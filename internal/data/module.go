@@ -23,3 +23,7 @@ const (
 	Medium Difficulty = "medium"
 	Hard   Difficulty = "hard"
 )
+
+func (Module) TableName() string {
+	return "modules"
+}

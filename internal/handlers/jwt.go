@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
 	"strings"
 
@@ -47,14 +48,10 @@ func (h *JWTHandler) JWTMiddleware(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-func GetClaims(c *fiber.Ctx) *types.UserClaims {
-	return c.Locals("user").(*types.UserClaims)
-}
-
 // controla la autorización de los usuario por rol.
 func Authorization(allowedRoles ...string) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		claims := GetClaims(c)
+		claims := utils.GetClaims(c)
 		for _, role := range allowedRoles {
 			if role == claims.TypeUser {
 				return c.Next()

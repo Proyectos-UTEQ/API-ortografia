@@ -4,6 +4,7 @@ import (
 	"Proyectos-UTEQ/api-ortografia/internal/data"
 	"Proyectos-UTEQ/api-ortografia/internal/db"
 	"Proyectos-UTEQ/api-ortografia/internal/handlers"
+	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"fmt"
 	"log"
 
@@ -33,20 +34,26 @@ func main() {
 	database := db.ConnectDB(config)
 
 	// Migrate the schema
-	err = database.AutoMigrate(&data.User{}, &data.ResetPassword{})
+	err = database.AutoMigrate(
+		&data.User{},
+		&data.ResetPassword{},
+		&data.Module{},
+	)
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	// Create fiber app
 	app := fiber.New()
+
+	// Create handlers
+	userHandler := handlers.NewUserHandler(config)
+	jwtHandler := handlers.NewJWTHandler(config)
+	moduleHandler := handlers.NewModuleHandler(config)
+
 	api := app.Group("/api")
 
 	auth := api.Group("/auth")
-
-	userHandler := handlers.NewUserHandler(config)
-	jwtHandler := handlers.NewJWTHandler(config)
-
 	// Routes for auth users
 	auth.Post("/sign-in", userHandler.HandlerSignin)
 	auth.Post("/sign-up", userHandler.HandlerSignup)
@@ -55,14 +62,19 @@ func main() {
 	auth.Post("/reset-password", userHandler.HandlerResetPassword)
 
 	// se encarga de actulizar la constraseña del usuario
-	// esto debe resivier un token.
+	// esto debe resivir un token.
 	auth.Put("/change-password", userHandler.HandlerChangePassword)
 
-	api.Get("/protegida", jwtHandler.JWTMiddleware, handlers.Authorization("admin", "profesor"), func(c *fiber.Ctx) error {
-		claims := handlers.GetClaims(c)
+	// Ejemplo de rutas protegidas.
+	api.Get("/protegida", jwtHandler.JWTMiddleware, handlers.Authorization("admin", "teacher"), func(c *fiber.Ctx) error {
+		claims := utils.GetClaims(c)
 		fmt.Println(claims.UserAPI)
 		return c.SendString("ruta protegida, has tenido acceso " + claims.UserAPI.FirstName)
 	})
+
+	module := api.Group("/module", jwtHandler.JWTMiddleware) // solo con JWT se tiene acceso.
+
+	module.Post("/", jwtHandler.JWTMiddleware, handlers.Authorization("teacher", "admin"), moduleHandler.CreateModuleForTeacher)
 
 	app.Listen(":3000")
 }
