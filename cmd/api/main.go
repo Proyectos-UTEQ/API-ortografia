@@ -45,6 +45,7 @@ func main() {
 	auth := api.Group("/auth")
 
 	userHandler := handlers.NewUserHandler(config)
+	jwtHandler := handlers.NewJWTHandler(config)
 
 	// Routes for auth users
 	auth.Post("/sign-in", userHandler.HandlerSignin)
@@ -56,6 +57,12 @@ func main() {
 	// se encarga de actulizar la constraseña del usuario
 	// esto debe resivier un token.
 	auth.Put("/change-password", userHandler.HandlerChangePassword)
+
+	api.Get("/protegida", jwtHandler.JWTMiddleware, func(c *fiber.Ctx) error {
+		claims := handlers.GetClaims(c)
+		fmt.Println(claims.UserAPI)
+		return c.SendString("protegida")
+	})
 
 	app.Listen(":3000")
 }
