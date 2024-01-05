@@ -18,9 +18,12 @@ func main() {
 	// Read environment variables
 	config.AutomaticEnv()
 
+	config.SetDefault("APP_PORT", "3000")
+	config.SetDefault("APP_ENV", "development")
+
 	// Read the config file
 	config.SetConfigName("config")
-	config.SetConfigType("yaml")
+	config.SetConfigType("env")
 	config.AddConfigPath(".")
 	config.AddConfigPath("/workspaces/api-ortografia")
 
@@ -74,7 +77,11 @@ func main() {
 
 	module := api.Group("/module", jwtHandler.JWTMiddleware) // solo con JWT se tiene acceso.
 
-	module.Post("/", jwtHandler.JWTMiddleware, handlers.Authorization("teacher", "admin"), moduleHandler.CreateModuleForTeacher)
+	// Routes for modules
+	module.Post(
+		"/",
+		handlers.Authorization("teacher", "admin"),
+		moduleHandler.CreateModuleForTeacher)
 
-	app.Listen(":3000")
+	app.Listen(":" + config.GetString("APP_PORT"))
 }

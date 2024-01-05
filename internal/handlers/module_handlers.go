@@ -56,6 +56,9 @@ func (h *ModuleHandler) CreateModuleForTeacher(c *fiber.Ctx) error {
 		})
 	}
 
+	// Generamos la url de la imagen del modulo.
+	moduleResponse.ImgBackURL = h.config.GetString("APP_HOST") + moduleResponse.ImgBackURL
+
 	return c.Status(fiber.StatusCreated).JSON(moduleResponse)
 
 }

@@ -42,6 +42,12 @@ func (h *UserHandler) HandlerSignin(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error al iniciar sesion", "data": err.Error()})
 	}
 
+	if user.URLAvatar == "" {
+		user.URLAvatar = fmt.Sprintf("https://ui-avatars.com/api/?name=%s&background=0D8ABC&color=fff&size=128", user.FirstName)
+	} else {
+		user.URLAvatar = h.config.GetString("APP_HOST") + user.URLAvatar
+	}
+
 	// generá el JWT para el usuario.
 	claims := types.UserClaims{
 		UserAPI: *user,
@@ -50,7 +56,7 @@ func (h *UserHandler) HandlerSignin(c *fiber.Ctx) error {
 		},
 	}
 
-	secret := h.config.GetString("JWT_SECRET")
+	secret := h.config.GetString("APP_JWT_SECRET")
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	ss, err := token.SignedString([]byte(secret))
@@ -128,7 +134,7 @@ func (h *UserHandler) HandlerResetPassword(c *fiber.Ctx) error {
 		},
 	}
 
-	secret := h.config.GetString("JWT_SECRET")
+	secret := h.config.GetString("APP_JWT_SECRET")
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	ss, err := token.SignedString([]byte(secret))
@@ -142,7 +148,7 @@ func (h *UserHandler) HandlerResetPassword(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error al guardar el token", "data": err.Error()})
 	}
 
-	apikey := h.config.GetString("KEY_RESEND")
+	apikey := h.config.GetString("APP_KEY_RESEND")
 	client := resend.NewClient(apikey)
 
 	params := &resend.SendEmailRequest{
@@ -180,7 +186,7 @@ func (h *UserHandler) HandlerChangePassword(c *fiber.Ctx) error {
 	}
 
 	// Parsear los datos del token
-	secret := h.config.GetString("JWT_SECRET")
+	secret := h.config.GetString("APP_JWT_SECRET")
 
 	token, err := jwt.ParseWithClaims(changePassword.Token, &types.UserClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil

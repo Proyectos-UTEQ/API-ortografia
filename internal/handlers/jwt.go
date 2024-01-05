@@ -30,7 +30,7 @@ func (h *JWTHandler) JWTMiddleware(c *fiber.Ctx) error {
 
 	tokenString := authArray[1]
 
-	secret := h.config.GetString("JWT_SECRET")
+	secret := h.config.GetString("APP_JWT_SECRET")
 	token, err := jwt.ParseWithClaims(tokenString, &types.UserClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
 	})
