@@ -4,7 +4,9 @@ import (
 	"Proyectos-UTEQ/api-ortografia/internal/db"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
 	"fmt"
+	"math"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 )
 
@@ -82,5 +84,43 @@ func RegisterModuleForTeacher(module *types.Module, userid uint) (*types.Module,
 		Index:            moduledb.Index,
 		IsPublic:         moduledb.IsPublic,
 	}, nil
+
+}
+
+// Se encarga de traer los modulos creado por el profesor.
+func GetModulesForTeacher(paginated *types.Paginated, userid uint) ([]Module, *types.PagintaedDetails, error) {
+
+	var modules []Module
+	var paginatedDetails types.PagintaedDetails
+
+	// TODO: Calcular los detalles de la paginación.
+	db.DB.
+		Table("modules").
+		Where("title LIKE ?", "%"+paginated.Query+"%").
+		Where("created_by_id = ?", userid).Count(&paginatedDetails.TotalItems)
+	paginatedDetails.Page = paginated.Page
+	paginatedDetails.TotalPage = int64(math.Ceil(float64(paginatedDetails.TotalItems) / float64(paginated.Limit)))
+
+	result := db.DB.
+		Preload("CreatedBy").
+		Where("title LIKE ?", "%"+paginated.Query+"%").
+		Where("created_by_id = ?", userid).
+		Order(fmt.Sprintf("%s %s", paginated.Sort, paginated.Order)).
+		Limit(paginated.Limit).
+		Offset((paginated.Page - 1) * paginated.Limit).
+		Find(&modules)
+
+	// seteamos la cantidad de items por pagina
+	paginatedDetails.ItemsPerPage = len(modules)
+
+	if result.Error != nil {
+		if pgerr, ok := result.Error.(*pgconn.PgError); ok {
+			if pgerr.Code == "42703" {
+				return nil, nil, fmt.Errorf("columna inexistente: %s", paginated.Sort)
+			}
+		}
+		return nil, nil, result.Error
+	}
+	return modules, &paginatedDetails, nil
 
 }

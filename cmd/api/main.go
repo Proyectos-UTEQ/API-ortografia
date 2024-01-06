@@ -25,7 +25,7 @@ func main() {
 	config.SetConfigName("config")
 	config.SetConfigType("env")
 	config.AddConfigPath(".")
-	config.AddConfigPath("/workspaces/api-ortografia")
+	// config.AddConfigPath("/workspaces/api-ortografia")
 
 	// Load the config
 	err := config.ReadInConfig()
@@ -82,6 +82,12 @@ func main() {
 		"/",
 		handlers.Authorization("teacher", "admin"),
 		moduleHandler.CreateModuleForTeacher)
+
+	// Lista todos los modulos.
+	module.Get(
+		"/",
+		moduleHandler.GetModulesForTeacher,
+	)
 
 	app.Listen(":" + config.GetString("APP_PORT"))
 }
