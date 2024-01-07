@@ -41,6 +41,7 @@ func main() {
 		&data.User{},
 		&data.ResetPassword{},
 		&data.Module{},
+		&data.Subscription{},
 	)
 	if err != nil {
 		fmt.Println(err)
@@ -95,6 +96,9 @@ func main() {
 		moduleHandler.GetModules,
 	)
 
+	module.Post("/subscribe", moduleHandler.Subscribe)
+
+	// Routes for upload
 	upload := api.Group("/upload")
 	uploadHandler := handlers.NewUploadHandler(config)
 
