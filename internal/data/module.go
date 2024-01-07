@@ -130,6 +130,39 @@ func GetModulesForTeacher(paginated *types.Paginated, userid uint) ([]Module, *t
 
 }
 
+func GetModuleForStudent(paginated *types.Paginated, userid uint) ([]Module, *types.PagintaedDetails, error) {
+	var modules []Module
+	var paginatedDetails types.PagintaedDetails
+
+	db.DB.Model(&Module{}).
+		Joins("JOIN subscriptions ON subscriptions.module_id = modules.id").
+		Where("subscriptions.user_id = ?", userid).
+		Count(&paginatedDetails.TotalItems)
+
+	paginatedDetails.Page = paginated.Page
+	paginatedDetails.TotalPage = int64(math.Ceil(float64(paginatedDetails.TotalItems) / float64(paginated.Limit)))
+
+	result := db.DB.Model(&Module{}).
+		Preload("CreatedBy").
+		Joins("JOIN subscriptions ON subscriptions.module_id = modules.id").
+		Where("subscriptions.user_id = ?", userid).
+		Order(fmt.Sprintf("%s %s", paginated.Sort, paginated.Order)).
+		Limit(paginated.Limit).
+		Offset((paginated.Page - 1) * paginated.Limit).
+		Find(&modules)
+
+	if result.Error != nil {
+		if pgerr, ok := result.Error.(*pgconn.PgError); ok {
+			if pgerr.Code == "42703" {
+				return nil, nil, fmt.Errorf("columna inexistente: %s", paginated.Sort)
+			}
+		}
+		return nil, nil, result.Error
+	}
+
+	return modules, &paginatedDetails, nil
+}
+
 // Se encarga de traer todos los modulos, sin importar quien los haya creado.
 func GetModule(paginated *types.Paginated) (modules []Module, details types.PagintaedDetails, err error) {
 

@@ -203,3 +203,39 @@ func (h *ModuleHandler) Subscribe(c *fiber.Ctx) error {
 	})
 
 }
+
+// Subscriptions recupera todas las subscripciones de un usuario
+func (h *ModuleHandler) Subscriptions(c *fiber.Ctx) error {
+
+	var paginated types.Paginated
+
+	if err := c.QueryParser(&paginated); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error al parsear los datos",
+			"data":    err,
+		})
+	}
+
+	// validamos
+	paginated.Validate()
+
+	claims := utils.GetClaims(c)
+
+	// obtenemos los modulos
+	modules, details, err := data.GetModuleForStudent(&paginated, claims.UserAPI.ID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": err.Error(),
+			"data":    err,
+		})
+	}
+
+	modulesApi := ModulesConverToAPI(modules, h.config.GetString("APP_HOST"))
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data":    modulesApi,
+		"details": details,
+	})
+}

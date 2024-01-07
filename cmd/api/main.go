@@ -97,6 +97,7 @@ func main() {
 	)
 
 	module.Post("/subscribe", moduleHandler.Subscribe)
+	module.Get("/subscribe", moduleHandler.Subscriptions)
 
 	// Routes for upload
 	upload := api.Group("/upload")
