@@ -116,6 +116,7 @@ func ModulesConverToAPI(modules []data.Module, apphost string) []types.Module {
 				Email:     module.CreatedBy.Email,
 				URLAvatar: module.CreatedBy.URLAvatar,
 			},
+			Code:             module.Code,
 			Title:            module.Title,
 			ShortDescription: module.ShortDescription,
 			TextRoot:         module.TextRoot,
@@ -130,7 +131,6 @@ func ModulesConverToAPI(modules []data.Module, apphost string) []types.Module {
 }
 
 func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
-	// TODO: Implementar esta funcionalidad
 
 	var paginated types.Paginated
 

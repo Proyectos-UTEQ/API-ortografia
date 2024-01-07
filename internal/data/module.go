@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 )
@@ -13,7 +14,8 @@ import (
 type Module struct {
 	gorm.Model
 	CreatedByID      uint
-	CreatedBy        User `gorm:"foreignKey:CreatedByID"`
+	CreatedBy        User   `gorm:"foreignKey:CreatedByID"`
+	Code             string `gorm:"uniqueIndex"`
 	Title            string
 	ShortDescription string
 	TextRoot         string
@@ -37,8 +39,10 @@ func (Module) TableName() string {
 }
 
 func RegisterModuleForTeacher(module *types.Module, userid uint) (*types.Module, error) {
+
 	moduledb := Module{
 		CreatedByID:      userid,
+		Code:             uuid.NewString(),
 		Title:            module.Title,
 		ShortDescription: module.ShortDescription,
 		TextRoot:         module.TextRoot,
@@ -75,6 +79,7 @@ func RegisterModuleForTeacher(module *types.Module, userid uint) (*types.Module,
 			LastName:  moduledb.CreatedBy.LastName,
 			URLAvatar: moduledb.CreatedBy.URLAvatar,
 		},
+		Code:             moduledb.Code,
 		Title:            moduledb.Title,
 		ShortDescription: moduledb.ShortDescription,
 		TextRoot:         moduledb.TextRoot,
