@@ -128,3 +128,37 @@ func ModulesConverToAPI(modules []data.Module, apphost string) []types.Module {
 	}
 	return modulesApi
 }
+
+func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
+	// TODO: Implementar esta funcionalidad
+
+	var paginated types.Paginated
+
+	if err := c.QueryParser(&paginated); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error al parsear los datos",
+			"data":    err,
+		})
+	}
+
+	// validamos
+	paginated.Validate()
+
+	// obtenemos los modulos
+	modules, details, err := data.GetModule(&paginated)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": err.Error(),
+			"data":    err,
+		})
+	}
+
+	modulesApi := ModulesConverToAPI(modules, h.config.GetString("APP_HOST"))
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data":    modulesApi,
+		"details": details,
+	})
+}

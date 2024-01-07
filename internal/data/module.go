@@ -93,7 +93,7 @@ func GetModulesForTeacher(paginated *types.Paginated, userid uint) ([]Module, *t
 	var modules []Module
 	var paginatedDetails types.PagintaedDetails
 
-	// TODO: Calcular los detalles de la paginación.
+	// Calcular los detalles de la paginación.
 	db.DB.
 		Table("modules").
 		Where("title LIKE ?", "%"+paginated.Query+"%").
@@ -122,5 +122,43 @@ func GetModulesForTeacher(paginated *types.Paginated, userid uint) ([]Module, *t
 		return nil, nil, result.Error
 	}
 	return modules, &paginatedDetails, nil
+
+}
+
+// Se encarga de traer todos los modulos, sin importar quien los haya creado.
+func GetModule(paginated *types.Paginated) (modules []Module, details types.PagintaedDetails, err error) {
+
+	// cantidad total de modulos.
+	db.DB.
+		Table("modules").
+		Where("title LIKE ?", "%"+paginated.Query+"%").
+		Count(&details.TotalItems)
+
+	// pagina actual y total de paginas.
+	details.Page = paginated.Page
+	details.TotalPage = int64(math.Ceil(float64(details.TotalItems) / float64(paginated.Limit)))
+
+	// Recuperamos los modulos
+	result := db.DB.
+		Preload("CreatedBy").
+		Where("title LIKE ?", "%"+paginated.Query+"%").
+		Order(fmt.Sprintf("%s %s", paginated.Sort, paginated.Order)).
+		Limit(paginated.Limit).
+		Offset((paginated.Page - 1) * paginated.Limit).
+		Find(&modules)
+
+	// seteamos la cantidad de items por pagina
+	details.ItemsPerPage = len(modules)
+
+	if result.Error != nil {
+		if pgerr, ok := result.Error.(*pgconn.PgError); ok {
+			if pgerr.Code == "42703" {
+				return nil, details, fmt.Errorf("columna inexistente: %s", paginated.Sort)
+			}
+		}
+		return nil, details, result.Error
+	}
+
+	return modules, details, nil
 
 }

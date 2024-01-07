@@ -85,8 +85,14 @@ func main() {
 
 	// Lista todos los modulos.
 	module.Get(
-		"/",
+		"/teacher",
+		handlers.Authorization("teacher", "admin"),
 		moduleHandler.GetModulesForTeacher,
+	)
+
+	module.Get(
+		"/",
+		moduleHandler.GetModules,
 	)
 
 	app.Listen(":" + config.GetString("APP_PORT"))
