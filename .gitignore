@@ -1,4 +1,4 @@
 bin/*
 config.env
 config.prod.env
-upload/
+uploads/

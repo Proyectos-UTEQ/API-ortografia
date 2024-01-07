@@ -95,5 +95,11 @@ func main() {
 		moduleHandler.GetModules,
 	)
 
+	upload := api.Group("/upload")
+	uploadHandler := handlers.NewUploadHandler(config)
+
+	upload.Post("/", jwtHandler.JWTMiddleware, uploadHandler.UploadFiles)
+	upload.Static("/", "./uploads")
+
 	app.Listen(":" + config.GetString("APP_PORT"))
 }
