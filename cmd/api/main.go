@@ -79,10 +79,18 @@ func main() {
 	module := api.Group("/module", jwtHandler.JWTMiddleware) // solo con JWT se tiene acceso.
 
 	// Routes for modules
+	// Crea un modulo.
 	module.Post(
 		"/",
 		handlers.Authorization("teacher", "admin"),
 		moduleHandler.CreateModuleForTeacher)
+
+	// Actuliza el modulo
+	module.Put(
+		"/:id",
+		handlers.Authorization("teacher", "admin"),
+		moduleHandler.UpdateModule,
+	)
 
 	// Lista todos los modulos.
 	module.Get(
@@ -91,6 +99,7 @@ func main() {
 		moduleHandler.GetModulesForTeacher,
 	)
 
+	// Lista todos los modulos.
 	module.Get(
 		"/",
 		moduleHandler.GetModules,
@@ -100,7 +109,7 @@ func main() {
 	module.Get("/subscribe", moduleHandler.Subscriptions)
 
 	// Routes for upload
-	upload := api.Group("/upload")
+	upload := api.Group("/uploads")
 	uploadHandler := handlers.NewUploadHandler(config)
 
 	upload.Post("/", jwtHandler.JWTMiddleware, uploadHandler.UploadFiles)

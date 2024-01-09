@@ -47,16 +47,24 @@ func (h *UploadHandler) UploadFiles(c *fiber.Ctx) error {
 
 			pathString = path.Join(pathString, newuuid+extension)
 
-			filesPath = append(filesPath, pathString)
-
 			if err := c.SaveFile(file, pathString); err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"status":  "error",
 					"message": err.Error(),
 				})
 			}
+
+			completePaht := fmt.Sprintf("%s/api/%s", h.config.GetString("APP_HOST"), pathString)
+
+			filesPath = append(filesPath, completePaht)
 		}
+	} else {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error al recuperar los archivos",
+		})
 	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status":  "success",
 		"message": "Files uploaded successfully",

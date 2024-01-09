@@ -92,6 +92,32 @@ func RegisterModuleForTeacher(module *types.Module, userid uint) (*types.Module,
 
 }
 
+func UpdateModule(module *types.Module) (*Module, error) {
+	data := map[string]interface{}{
+		"title":             module.Title,
+		"short_description": module.ShortDescription,
+		"text_root":         module.TextRoot,
+		"img_back_url":      module.ImgBackURL,
+		"difficulty":        module.Difficulty,
+		"points_to_earn":    module.PointsToEarn,
+		"index":             module.Index,
+		"is_public":         module.IsPublic,
+	}
+
+	result := db.DB.Model(&Module{}).Where("id = ?", module.ID).Updates(data)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	var moduleData Module
+	result = db.DB.Preload("CreatedBy").First(&moduleData, module.ID)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &moduleData, nil
+}
+
 // Se encarga de traer los modulos creado por el profesor.
 func GetModulesForTeacher(paginated *types.Paginated, userid uint) ([]Module, *types.PagintaedDetails, error) {
 
