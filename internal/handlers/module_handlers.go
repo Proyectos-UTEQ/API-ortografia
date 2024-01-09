@@ -121,7 +121,7 @@ func (h *ModuleHandler) UpdateModule(c *fiber.Ctx) error {
 		})
 	}
 
-	moduleResponse := ModuleToApi(*moduleData)
+	moduleResponse := data.ModuleToApi(*moduleData)
 
 	return c.Status(fiber.StatusOK).JSON(moduleResponse)
 }
@@ -155,47 +155,12 @@ func (h *ModuleHandler) GetModulesForTeacher(c *fiber.Ctx) error {
 		})
 	}
 
-	modulesApi := ModulesConverToAPI(modules, h.config.GetString("APP_HOST"))
+	modulesApi := data.ModulesToAPI(modules, h.config.GetString("APP_HOST"))
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data":    modulesApi,
 		"details": details,
 	})
-}
-
-// convierte las entidades de modulos a tipos de modulos para mostrar en la API REST xD
-func ModulesConverToAPI(modules []data.Module, apphost string) []types.Module {
-	// convertimos los modulos a types.modules
-	modulesApi := make([]types.Module, len(modules))
-	for i, module := range modules {
-		modulesApi[i] = ModuleToApi(module)
-	}
-	return modulesApi
-}
-
-// convertimos un module data a un module type para la API REST.
-func ModuleToApi(module data.Module) types.Module {
-	return types.Module{
-		ID:        module.ID,
-		CreatedAt: module.CreatedAt.String(),
-		UpdatedAt: module.UpdatedAt.String(),
-		CreateBy: types.UserAPI{
-			ID:        module.CreatedBy.ID,
-			FirstName: module.CreatedBy.FirstName,
-			LastName:  module.CreatedBy.LastName,
-			Email:     module.CreatedBy.Email,
-			URLAvatar: module.CreatedBy.URLAvatar,
-		},
-		Code:             module.Code,
-		Title:            module.Title,
-		ShortDescription: module.ShortDescription,
-		TextRoot:         module.TextRoot,
-		ImgBackURL:       module.ImgBackURL,
-		Difficulty:       string(module.Difficulty),
-		PointsToEarn:     module.PointsToEarn,
-		Index:            module.Index,
-		IsPublic:         module.IsPublic,
-	}
 }
 
 func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
@@ -223,7 +188,7 @@ func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
 		})
 	}
 
-	modulesApi := ModulesConverToAPI(modules, h.config.GetString("APP_HOST"))
+	modulesApi := data.ModulesToAPI(modules, h.config.GetString("APP_HOST"))
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data":    modulesApi,
@@ -300,7 +265,7 @@ func (h *ModuleHandler) Subscriptions(c *fiber.Ctx) error {
 		})
 	}
 
-	modulesApi := ModulesConverToAPI(modules, h.config.GetString("APP_HOST"))
+	modulesApi := data.ModulesToAPI(modules, h.config.GetString("APP_HOST"))
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data":    modulesApi,
@@ -332,4 +297,29 @@ func (h *ModuleHandler) GetStudents(c *fiber.Ctx) error {
 	studentsData := data.UsersToAPI(students)
 
 	return c.Status(fiber.StatusOK).JSON(studentsData)
+}
+
+func (h *ModuleHandler) GetModuleByID(c *fiber.Ctx) error {
+	idModule := c.Params("id")
+
+	// Convertir el idModule a uint
+	id, err := strconv.Atoi(idModule)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error al parsear el id del modulo",
+		})
+	}
+
+	module, err := data.ModuleByID(uint(id))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
+
+	moduleResponse := data.ModuleToApi(*module)
+
+	return c.JSON(moduleResponse)
 }

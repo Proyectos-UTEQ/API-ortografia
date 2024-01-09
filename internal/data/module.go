@@ -38,6 +38,41 @@ func (Module) TableName() string {
 	return "modules"
 }
 
+// convierte las entidades de modulos a tipos de modulos para mostrar en la API REST xD
+func ModulesToAPI(modules []Module, apphost string) []types.Module {
+	// convertimos los modulos a types.modules
+	modulesApi := make([]types.Module, len(modules))
+	for i, module := range modules {
+		modulesApi[i] = ModuleToApi(module)
+	}
+	return modulesApi
+}
+
+// convertimos un module data a un module type para la API REST.
+func ModuleToApi(module Module) types.Module {
+	return types.Module{
+		ID:        module.ID,
+		CreatedAt: module.CreatedAt.String(),
+		UpdatedAt: module.UpdatedAt.String(),
+		CreateBy: types.UserAPI{
+			ID:        module.CreatedBy.ID,
+			FirstName: module.CreatedBy.FirstName,
+			LastName:  module.CreatedBy.LastName,
+			Email:     module.CreatedBy.Email,
+			URLAvatar: module.CreatedBy.URLAvatar,
+		},
+		Code:             module.Code,
+		Title:            module.Title,
+		ShortDescription: module.ShortDescription,
+		TextRoot:         module.TextRoot,
+		ImgBackURL:       module.ImgBackURL,
+		Difficulty:       string(module.Difficulty),
+		PointsToEarn:     module.PointsToEarn,
+		Index:            module.Index,
+		IsPublic:         module.IsPublic,
+	}
+}
+
 func RegisterModuleForTeacher(module *types.Module, userid uint) (*types.Module, error) {
 
 	moduledb := Module{
@@ -239,4 +274,13 @@ func GetStudentsByModule(moduleid uint) ([]User, error) {
 		return nil, result.Error
 	}
 	return users, nil
+}
+
+func ModuleByID(id uint) (*Module, error) {
+	var module Module
+	result := db.DB.Preload("CreatedBy").First(&module, id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &module, nil
 }
