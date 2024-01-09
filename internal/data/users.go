@@ -45,6 +45,31 @@ func (User) TableName() string {
 	return "users"
 }
 
+func UserToAPI(user User) *types.UserAPI {
+	return &types.UserAPI{
+		ID:           user.ID,
+		FirstName:    user.FirstName,
+		LastName:     user.LastName,
+		Email:        user.Email,
+		Password:     "",
+		BirthDate:    user.BirthDate.String(),
+		PointsEarned: user.PointsEarned,
+		Whatsapp:     user.Whatsapp,
+		Telegram:     user.Telegram,
+		URLAvatar:    user.URLAvatar,
+		Status:       string(user.Status),
+		TypeUser:     string(user.TypeUser),
+	}
+}
+
+func UsersToAPI(users []User) []types.UserAPI {
+	var usersApi []types.UserAPI
+	for _, user := range users {
+		usersApi = append(usersApi, *UserToAPI(user))
+	}
+	return usersApi
+}
+
 func Login(login types.Login) (*types.UserAPI, bool, error) {
 	var user User
 	result := db.DB.First(&user, "email = ?", login.Email)

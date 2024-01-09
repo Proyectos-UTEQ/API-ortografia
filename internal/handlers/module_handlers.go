@@ -307,3 +307,29 @@ func (h *ModuleHandler) Subscriptions(c *fiber.Ctx) error {
 		"details": details,
 	})
 }
+
+func (h *ModuleHandler) GetStudents(c *fiber.Ctx) error {
+	idModule := c.Params("id")
+
+	// Convertir el idModule a uint
+	id, err := strconv.Atoi(idModule)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error al parsear el id del modulo",
+		})
+	}
+
+	// Obtener los estudiantes del modulo
+	students, err := data.GetStudentsByModule(uint(id))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
+
+	studentsData := data.UsersToAPI(students)
+
+	return c.Status(fiber.StatusOK).JSON(studentsData)
+}

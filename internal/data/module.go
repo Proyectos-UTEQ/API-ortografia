@@ -226,3 +226,17 @@ func GetModule(paginated *types.Paginated) (modules []Module, details types.Pagi
 	return modules, details, nil
 
 }
+
+// StudentForModule recupera los estudiantes de un modulo
+func GetStudentsByModule(moduleid uint) ([]User, error) {
+	var users []User
+	result := db.DB.
+		Table("users").
+		Joins("JOIN subscriptions ON subscriptions.user_id = users.id").
+		Where("subscriptions.module_id = ?", moduleid).
+		Find(&users)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return users, nil
+}

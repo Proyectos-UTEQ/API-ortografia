@@ -106,7 +106,10 @@ func main() {
 	)
 
 	module.Post("/subscribe", moduleHandler.Subscribe)
-	module.Get("/subscribe", moduleHandler.Subscriptions)
+	module.Get("/subscribed", moduleHandler.Subscriptions)
+
+	// Listar todos los estudiantes que estan suscritos a un modulo.
+	module.Get("/:id/students", moduleHandler.GetStudents)
 
 	// Routes for upload
 	upload := api.Group("/uploads")
