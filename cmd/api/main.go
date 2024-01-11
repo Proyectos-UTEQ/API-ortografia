@@ -9,6 +9,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/spf13/viper"
 )
 
@@ -49,6 +50,12 @@ func main() {
 
 	// Create fiber app
 	app := fiber.New()
+
+	// configuració de cors
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowHeaders: "Origin, Content-Type, Accept",
+	}))
 
 	// Create handlers
 	userHandler := handlers.NewUserHandler(config)
