@@ -60,6 +60,8 @@ func ModuleToApi(module Module) types.Module {
 			LastName:  module.CreatedBy.LastName,
 			Email:     module.CreatedBy.Email,
 			URLAvatar: module.CreatedBy.URLAvatar,
+			Status:    string(module.CreatedBy.Status),
+			TypeUser:  string(module.CreatedBy.TypeUser),
 		},
 		Code:             module.Code,
 		Title:            module.Title,
@@ -259,6 +261,72 @@ func GetModule(paginated *types.Paginated) (modules []Module, details types.Pagi
 	}
 
 	return modules, details, nil
+
+}
+
+// Recupera los datos necesario para un servicio en especifico.
+type ModuleUserSubcription struct {
+	Module
+	IsSubscribed bool
+}
+
+// funcione para convertir los modulos que agrega la parte si estan suscritos o no,
+// para utilizarlos en el frontend.
+func ModuleUserSubcriptionToApi(modules []ModuleUserSubcription) []types.ModuleUser {
+
+	modulesApi := make([]types.ModuleUser, len(modules))
+	for i, module := range modules {
+		modulesApi[i] = ModuleUserToApi(module)
+	}
+	return modulesApi
+
+}
+
+func ModuleUserToApi(module ModuleUserSubcription) types.ModuleUser {
+	return types.ModuleUser{
+		Module:       ModuleToApi(module.Module),
+		IsSubscribed: module.IsSubscribed,
+	}
+}
+
+// Retorna todos los modulos y ademas tiene un campo para saber si el usuario esta suscrito a ese modulo
+func GetModuleWithUserSubscription(paginated *types.Paginated, userid uint) (moduleUser []ModuleUserSubcription, details types.PagintaedDetails, err error) {
+
+	// cantidad total de modulos.
+	db.DB.
+		Table("modules").
+		Where("title LIKE ?", "%"+paginated.Query+"%").
+		Count(&details.TotalItems)
+
+	// pagina actual y total de paginas.
+	details.Page = paginated.Page
+	details.TotalPage = int64(math.Ceil(float64(details.TotalItems) / float64(paginated.Limit)))
+
+	// Recuperamos todos los modulos, y en cada modulo revisamos si el usuario esta suscrito.
+	result := db.DB.
+		Table("modules").
+		Preload("CreatedBy").
+		Select("modules.* ", "subscriptions.user_id IS NOT NULL as is_subscribed").
+		Joins("LEFT JOIN subscriptions ON subscriptions.module_id = modules.id").
+		Where("title LIKE ?", "%"+paginated.Query+"%").
+		Order(fmt.Sprintf("%s %s", paginated.Sort, paginated.Order)).
+		Limit(paginated.Limit).
+		Offset((paginated.Page - 1) * paginated.Limit).
+		Find(&moduleUser)
+
+	// seteamos la cantidad de items por pagina
+	details.ItemsPerPage = len(moduleUser)
+
+	if result.Error != nil {
+		if pgerr, ok := result.Error.(*pgconn.PgError); ok {
+			if pgerr.Code == "42703" {
+				return nil, details, fmt.Errorf("columna inexistente: %s", paginated.Sort)
+			}
+		}
+		return nil, details, result.Error
+	}
+
+	return moduleUser, details, nil
 
 }
 

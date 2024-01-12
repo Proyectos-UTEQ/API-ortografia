@@ -196,6 +196,42 @@ func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
 	})
 }
 
+func (h *ModuleHandler) GetModuleWithIsSubscribed(c *fiber.Ctx) error {
+
+	claims := utils.GetClaims(c)
+
+	var paginated types.Paginated
+
+	if err := c.QueryParser(&paginated); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error al parsear los datos",
+			"data":    err,
+		})
+	}
+
+	// validamos
+	paginated.Validate()
+
+	// obtenemos los modulos
+	modules, details, err := data.GetModuleWithUserSubscription(&paginated, claims.UserAPI.ID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": err.Error(),
+			"data":    err,
+		})
+	}
+
+	modulesApi := data.ModuleUserSubcriptionToApi(modules)
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data":    modulesApi,
+		"details": details,
+	})
+
+}
+
 // un usuario se podra suscribir a un modulo
 func (h *ModuleHandler) Subscribe(c *fiber.Ctx) error {
 

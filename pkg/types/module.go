@@ -16,3 +16,9 @@ type Module struct {
 	Index            int     `json:"index"`
 	IsPublic         bool    `json:"is_public"`
 }
+
+// Representacion de un modulo para el frontend para saber si el usuario esta subscrito.
+type ModuleUser struct {
+	Module
+	IsSubscribed bool `json:"is_subscribed"`
+}

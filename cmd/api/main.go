@@ -105,6 +105,9 @@ func main() {
 		moduleHandler.GetModules,
 	)
 
+	// Recupera todos los modulos y ademas indica si el usuario esta suscrito o no.
+	module.Get("/with-is-subscribed", moduleHandler.GetModuleWithIsSubscribed)
+
 	module.Post("/subscribe", moduleHandler.Subscribe)
 	module.Get("/subscribed", moduleHandler.Subscriptions)
 
