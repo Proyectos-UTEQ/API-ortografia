@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/data"
+	"Proyectos-UTEQ/api-ortografia/internal/services"
+	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
 	"fmt"
 	"log"
@@ -9,7 +11,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/resendlabs/resend-go"
 	"github.com/spf13/viper"
 )
 
@@ -148,28 +149,19 @@ func (h *UserHandler) HandlerResetPassword(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error al guardar el token", "data": err.Error()})
 	}
 
-	apikey := h.config.GetString("APP_KEY_RESEND")
-	client := resend.NewClient(apikey)
+	// make message to send
+	messageToSend := fmt.Sprintf(`Hola, %s %s. Haga click en el siguiente enlace para reestablecer su contraseña: http://localhost:3000/reset-password/%s`, user.FirstName, user.LastName, ss)
 
-	params := &resend.SendEmailRequest{
-		From:    "onboarding@resend.dev",
-		To:      []string{resetPassword.Email},
-		Subject: "Reestablece tu contraseña",
-		Html: fmt.Sprintf(`
-		<h1>Reestablece tu contraseña</h1>
-		<p>Haga click en el siguiente enlace para reestablecer su contraseña</p>
-		<p>Token: %s</p>
-		<p>El token tiene una duracion de 24 horas.</p>
-	`, ss),
-	}
+	emailNotifier := services.NewEmailNotifier(h.config, []string{user.Email}, "Reestablece tu contraseña")
+	telegramNotifier := services.NewTelegramNotifier(h.config, user.TelegramID)
 
-	_, err = client.Emails.Send(params)
+	err = utils.ResetPassword(emailNotifier, messageToSend, "http://localhost:3000/reset-password/"+ss)
 	if err != nil {
-		fmt.Println(err)
-		return c.Status(500).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Error al enviar el correo electronico",
-		})
+		log.Println(err)
+	}
+	err = utils.ResetPassword(telegramNotifier, "Presiona el siguiente boton para resetear tu contraseña", "https://google.com")
+	if err != nil {
+		log.Println(err)
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Revisa tu correo electronico"})

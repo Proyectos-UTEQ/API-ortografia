@@ -10,6 +10,7 @@ type UserAPI struct {
 	PointsEarned int    `json:"points_earned"`
 	Whatsapp     string `json:"whatsapp"`
 	Telegram     string `json:"telegram"`
+	TelegramID   int64  `json:"telegram_id"`
 	URLAvatar    string `json:"url_avatar"`
 	Status       string `json:"status"`
 	TypeUser     string `json:"type_user" validate:"required,oneof=student teacher admin"`

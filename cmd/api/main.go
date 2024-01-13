@@ -4,6 +4,7 @@ import (
 	"Proyectos-UTEQ/api-ortografia/internal/data"
 	"Proyectos-UTEQ/api-ortografia/internal/db"
 	"Proyectos-UTEQ/api-ortografia/internal/handlers"
+	"Proyectos-UTEQ/api-ortografia/internal/services"
 	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"fmt"
 	"log"
@@ -36,7 +37,6 @@ func main() {
 
 	// Connect to the database
 	database := db.ConnectDB(config)
-
 	// Migrate the schema
 	err = database.AutoMigrate(
 		&data.User{},
@@ -130,5 +130,6 @@ func main() {
 	upload.Post("/", jwtHandler.JWTMiddleware, uploadHandler.UploadFiles)
 	upload.Static("/", "./uploads")
 
+	go services.TelegramBot(config)
 	app.Listen(":" + config.GetString("APP_PORT"))
 }

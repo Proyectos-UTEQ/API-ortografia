@@ -21,6 +21,7 @@ type User struct {
 	PointsEarned int
 	Whatsapp     string
 	Telegram     string
+	TelegramID   int64
 	URLAvatar    string
 	Status       Status
 	TypeUser     TypeUser
@@ -147,6 +148,7 @@ func ExisteEmail(email string) (bool, types.UserAPI) {
 		PointsEarned: user.PointsEarned,
 		Whatsapp:     user.Whatsapp,
 		Telegram:     user.Telegram,
+		TelegramID:   user.TelegramID,
 		URLAvatar:    user.URLAvatar,
 		Status:       string(user.Status),
 		TypeUser:     string(user.TypeUser),
@@ -163,6 +165,16 @@ func UpdatePassword(userid uint, newPassword string) error {
 	// actualizar la contraseña en la base de datos.
 	result := db.DB.Model(&User{}).Where("id = ?", userid).Update("password", string(hashedPassword))
 	fmt.Println("Rows affected: ", result.RowsAffected)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
+func SetTelegramChat(username string, chatid int64) error {
+
+	// actualizar la contraseña en la base de datos.
+	result := db.DB.Model(&User{}).Where("telegram = ?", username).Update("telegram_id", chatid)
 	if result.Error != nil {
 		return result.Error
 	}
