@@ -27,6 +27,7 @@ func main() {
 	config.SetConfigName("config")
 	config.SetConfigType("env")
 	config.AddConfigPath(".")
+	config.AddConfigPath("/etc/secrets/")
 	// config.AddConfigPath("/workspaces/api-ortografia")
 
 	// Load the config
