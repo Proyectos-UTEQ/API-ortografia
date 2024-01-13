@@ -158,11 +158,11 @@ func (h *UserHandler) HandlerResetPassword(c *fiber.Ctx) error {
 	emailNotifier := services.NewEmailNotifier(h.config, []string{user.Email}, "Reestablece tu contraseña")
 	telegramNotifier := services.NewTelegramNotifier(h.config, user.TelegramID)
 
-	err = utils.ResetPassword(emailNotifier, messageToSend, "http://localhost:3000/reset-password/"+ss)
+	err = utils.ResetPassword(emailNotifier, messageToSend, "https://app-poliword.onrender.com/auth/forgot-password/"+ss)
 	if err != nil {
 		log.Println(err)
 	}
-	err = utils.ResetPassword(telegramNotifier, "Presiona el siguiente boton para resetear tu contraseña", "https://google.com")
+	err = utils.ResetPassword(telegramNotifier, "Presiona el siguiente boton para resetear tu contraseña", "https://app-poliword.onrender.com/auth/forgot-password?token="+ss)
 	if err != nil {
 		log.Println(err)
 	}
