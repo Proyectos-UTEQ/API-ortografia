@@ -2,6 +2,7 @@ package data
 
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/db"
+	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
 	"errors"
 	"fmt"
@@ -56,7 +57,7 @@ func UserToAPI(user User) *types.UserAPI {
 		LastName:             user.LastName,
 		Email:                user.Email,
 		Password:             "",
-		BirthDate:            user.BirthDate.String(),
+		BirthDate:            utils.GetDate(user.BirthDate),
 		PointsEarned:         user.PointsEarned,
 		Whatsapp:             user.Whatsapp,
 		Telegram:             user.Telegram,

@@ -2,6 +2,7 @@ package data
 
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/db"
+	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
 	"fmt"
 	"math"
@@ -52,16 +53,17 @@ func ModulesToAPI(modules []Module, apphost string) []types.Module {
 func ModuleToApi(module Module) types.Module {
 	return types.Module{
 		ID:        module.ID,
-		CreatedAt: module.CreatedAt.String(),
-		UpdatedAt: module.UpdatedAt.String(),
+		CreatedAt: utils.GetDate(module.CreatedAt),
+		UpdatedAt: utils.GetDate(module.UpdatedAt),
 		CreateBy: types.UserAPI{
-			ID:        module.CreatedBy.ID,
-			FirstName: module.CreatedBy.FirstName,
-			LastName:  module.CreatedBy.LastName,
-			Email:     module.CreatedBy.Email,
-			URLAvatar: module.CreatedBy.URLAvatar,
-			Status:    string(module.CreatedBy.Status),
-			TypeUser:  string(module.CreatedBy.TypeUser),
+			ID:                   module.CreatedBy.ID,
+			FirstName:            module.CreatedBy.FirstName,
+			LastName:             module.CreatedBy.LastName,
+			Email:                module.CreatedBy.Email,
+			URLAvatar:            module.CreatedBy.URLAvatar,
+			Status:               string(module.CreatedBy.Status),
+			TypeUser:             string(module.CreatedBy.TypeUser),
+			PerfilUpdateRequired: module.CreatedBy.PerfilUpdateRequired,
 		},
 		Code:             module.Code,
 		Title:            module.Title,
@@ -75,7 +77,7 @@ func ModuleToApi(module Module) types.Module {
 	}
 }
 
-func RegisterModuleForTeacher(module *types.Module, userid uint) (*types.Module, error) {
+func RegisterModuleForTeacher(module *types.Module, userid uint) (types.Module, error) {
 
 	moduledb := Module{
 		CreatedByID:      userid,
@@ -93,39 +95,16 @@ func RegisterModuleForTeacher(module *types.Module, userid uint) (*types.Module,
 	// guardamos el modulos en la db
 	result := db.DB.Create(&moduledb)
 	if result.Error != nil {
-		return nil, result.Error
+		return types.Module{}, result.Error
 	}
 
 	// recuperamos el usuario de la db.
-
 	result = db.DB.Preload("CreatedBy").First(&moduledb, moduledb.ID)
 	if result.Error != nil {
-		return nil, result.Error
+		return types.Module{}, result.Error
 	}
 
-	fmt.Println(module)
-
-	return &types.Module{
-		ID:        moduledb.ID,
-		CreatedAt: moduledb.CreatedAt.String(),
-		UpdatedAt: moduledb.UpdatedAt.String(),
-		CreateBy: types.UserAPI{
-			ID:        moduledb.CreatedBy.ID,
-			Email:     moduledb.CreatedBy.Email,
-			FirstName: moduledb.CreatedBy.FirstName,
-			LastName:  moduledb.CreatedBy.LastName,
-			URLAvatar: moduledb.CreatedBy.URLAvatar,
-		},
-		Code:             moduledb.Code,
-		Title:            moduledb.Title,
-		ShortDescription: moduledb.ShortDescription,
-		TextRoot:         moduledb.TextRoot,
-		ImgBackURL:       moduledb.ImgBackURL,
-		Difficulty:       string(moduledb.Difficulty),
-		PointsToEarn:     moduledb.PointsToEarn,
-		Index:            moduledb.Index,
-		IsPublic:         moduledb.IsPublic,
-	}, nil
+	return ModuleToApi(moduledb), nil
 
 }
 
