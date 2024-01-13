@@ -55,7 +55,7 @@ func main() {
 	// configuració de cors
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+		AllowHeaders: "",
 	}))
 
 	// Create handlers
