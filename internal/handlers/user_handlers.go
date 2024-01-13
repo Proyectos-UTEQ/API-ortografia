@@ -75,8 +75,8 @@ func (h *UserHandler) HandlerSignin(c *fiber.Ctx) error {
 func (h *UserHandler) HandlerSignup(c *fiber.Ctx) error {
 
 	// parseamos los datos
-	var user types.UserAPI
-	if err := c.BodyParser(&user); err != nil {
+	var userAPI types.UserAPI
+	if err := c.BodyParser(&userAPI); err != nil {
 		log.Println("Error al registrar usuario", err)
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
@@ -85,7 +85,7 @@ func (h *UserHandler) HandlerSignup(c *fiber.Ctx) error {
 	}
 
 	// Validar datos para registro inicial.
-	resp, err := types.Validate(&user)
+	resp, err := types.Validate(&userAPI)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
@@ -95,16 +95,19 @@ func (h *UserHandler) HandlerSignup(c *fiber.Ctx) error {
 	}
 
 	// Crea el usuario en la base de datos.
-	err = data.Register(&user)
+	user, err := data.Register(&userAPI)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Error al registrar usuario",
-			"data":    err,
+			"data":    err.Error(),
 		})
 	}
 
-	return c.JSON(fiber.Map{"status": "success", "message": "User created", "data": user})
+	// convertir los datos a un usuario api
+	result := data.UserToAPI(*user)
+
+	return c.JSON(fiber.Map{"status": "success", "message": "User created", "data": result})
 }
 
 func (h *UserHandler) HandlerResetPassword(c *fiber.Ctx) error {

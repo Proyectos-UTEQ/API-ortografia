@@ -10,6 +10,11 @@ import (
 
 func TelegramBot(config *viper.Viper) {
 
+	if !config.GetBool("TELEGRAM_BOT_ENABLE") {
+		log.Println("Telegram bot not enabled")
+		return
+	}
+
 	bot, err := tgbotapi.NewBotAPI(config.GetString("TELEGRAM_BOT_TOKEN"))
 	if err != nil {
 		log.Println(err)

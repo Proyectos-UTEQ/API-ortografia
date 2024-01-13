@@ -7,31 +7,34 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type User struct {
 	gorm.Model
-	FirstName    string
-	LastName     string
-	Email        string `gorm:"uniqueIndex"`
-	Password     string
-	BirthDate    time.Time
-	PointsEarned int
-	Whatsapp     string
-	Telegram     string
-	TelegramID   int64
-	URLAvatar    string
-	Status       Status
-	TypeUser     TypeUser
+	FirstName            string
+	LastName             string
+	Email                string `gorm:"uniqueIndex"`
+	Password             string
+	BirthDate            time.Time
+	PointsEarned         int
+	Whatsapp             string
+	Telegram             string
+	TelegramID           int64
+	URLAvatar            string
+	Status               Status
+	TypeUser             TypeUser
+	PerfilUpdateRequired bool
 }
 
 type Status string
 
 const (
-	Actived Status = "actived"
-	Blocked Status = "blocked"
+	Actived         Status = "actived"
+	Blocked         Status = "blocked"
+	PendingApproval Status = "pending_approval"
 )
 
 type TypeUser string
@@ -48,18 +51,20 @@ func (User) TableName() string {
 
 func UserToAPI(user User) *types.UserAPI {
 	return &types.UserAPI{
-		ID:           user.ID,
-		FirstName:    user.FirstName,
-		LastName:     user.LastName,
-		Email:        user.Email,
-		Password:     "",
-		BirthDate:    user.BirthDate.String(),
-		PointsEarned: user.PointsEarned,
-		Whatsapp:     user.Whatsapp,
-		Telegram:     user.Telegram,
-		URLAvatar:    user.URLAvatar,
-		Status:       string(user.Status),
-		TypeUser:     string(user.TypeUser),
+		ID:                   user.ID,
+		FirstName:            user.FirstName,
+		LastName:             user.LastName,
+		Email:                user.Email,
+		Password:             "",
+		BirthDate:            user.BirthDate.String(),
+		PointsEarned:         user.PointsEarned,
+		Whatsapp:             user.Whatsapp,
+		Telegram:             user.Telegram,
+		TelegramID:           user.TelegramID,
+		URLAvatar:            user.URLAvatar,
+		Status:               string(user.Status),
+		TypeUser:             string(user.TypeUser),
+		PerfilUpdateRequired: user.PerfilUpdateRequired,
 	}
 }
 
@@ -105,32 +110,44 @@ func Login(login types.Login) (*types.UserAPI, bool, error) {
 	return userAPI, true, nil
 }
 
-func Register(userAPI *types.UserAPI) error {
+func Register(userAPI *types.UserAPI) (*User, error) {
 
 	// crear un hash apartir de la contraseña
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userAPI.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	// en caso de ser admin o profesor se pone en pendiente de aprobacion.
+	status := Actived
+	if userAPI.TypeUser == "admin" || userAPI.TypeUser == "teacher" {
+		status = PendingApproval
 	}
 
 	// rellenamos los datos con la entidad.
 	user := User{
-		FirstName: userAPI.FirstName,
-		Email:     userAPI.Email,
-		Password:  string(hashedPassword),
-		Status:    Actived,
-		TypeUser:  TypeUser(userAPI.TypeUser),
+		FirstName:            userAPI.FirstName,
+		Email:                userAPI.Email,
+		Password:             string(hashedPassword),
+		Status:               status,
+		TypeUser:             TypeUser(userAPI.TypeUser),
+		PerfilUpdateRequired: true,
 	}
 
 	result := db.DB.Create(&user)
 
 	if result.Error != nil {
-		return result.Error
+		if pgerr, ok := result.Error.(*pgconn.PgError); ok {
+			if pgerr.Code == "23505" {
+				return nil, errors.New("el email ya existe")
+			}
+		}
+		return nil, result.Error
 	}
 
 	userAPI.ID = user.ID
 
-	return nil
+	return &user, nil
 }
 
 func ExisteEmail(email string) (bool, types.UserAPI) {
