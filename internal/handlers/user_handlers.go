@@ -44,7 +44,7 @@ func (h *UserHandler) HandlerSignin(c *fiber.Ctx) error {
 	}
 
 	if user.URLAvatar == "" {
-		user.URLAvatar = fmt.Sprintf("https://ui-avatars.com/api/?name=%s&background=0D8ABC&color=fff&size=128", user.FirstName)
+		user.URLAvatar = fmt.Sprintf("https://ui-avatars.com/api/?name=%s&background=5952A2&color=fff&size=128", user.FirstName)
 	} else {
 		user.URLAvatar = h.config.GetString("APP_HOST") + user.URLAvatar
 	}
