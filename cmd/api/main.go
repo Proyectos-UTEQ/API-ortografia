@@ -38,15 +38,19 @@ func main() {
 
 	// Connect to the database
 	database := db.ConnectDB(config)
-	// Migrate the schema
-	err = database.AutoMigrate(
-		&data.User{},
-		&data.ResetPassword{},
-		&data.Module{},
-		&data.Subscription{},
-	)
-	if err != nil {
-		fmt.Println(err)
+
+	migrate := config.GetBool("APP_MIGRATE")
+	if migrate {
+		// Migrate the schema
+		err = database.AutoMigrate(
+			&data.User{},
+			&data.ResetPassword{},
+			&data.Module{},
+			&data.Subscription{},
+		)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	// Create fiber app
