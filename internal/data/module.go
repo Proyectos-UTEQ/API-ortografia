@@ -288,6 +288,7 @@ func GetModuleWithUserSubscription(paginated *types.Paginated, userid uint) (mod
 		Select("modules.* ", "subscriptions.user_id IS NOT NULL as is_subscribed").
 		Joins("LEFT JOIN subscriptions ON subscriptions.module_id = modules.id").
 		Where("title LIKE ?", "%"+paginated.Query+"%").
+		Where("subscriptions.user_id = ? or subscriptions.user_id is null", userid). // where s.user_id = 3 or s.user_id is null
 		Order(fmt.Sprintf("%s %s", paginated.Sort, paginated.Order)).
 		Limit(paginated.Limit).
 		Offset((paginated.Page - 1) * paginated.Limit).
