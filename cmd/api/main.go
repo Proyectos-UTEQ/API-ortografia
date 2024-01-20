@@ -64,7 +64,10 @@ func main() {
 	}
 
 	// Create fiber app
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		AppName: "API REST Poliword",
+		Prefork: config.GetBool("APP_PREFORK"),
+	})
 
 	// configuració de cors
 	app.Use(cors.New(cors.Config{
