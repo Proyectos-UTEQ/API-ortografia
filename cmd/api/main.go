@@ -94,7 +94,6 @@ func main() {
 	// Ejemplo de rutas protegidas.
 	api.Get("/protegida", jwtHandler.JWTMiddleware, handlers.Authorization("admin", "teacher"), func(c *fiber.Ctx) error {
 		claims := utils.GetClaims(c)
-		fmt.Println(claims.UserAPI)
 		return c.SendString("ruta protegida, has tenido acceso " + claims.UserAPI.FirstName)
 	})
 
@@ -137,6 +136,11 @@ func main() {
 		moduleHandler.CreateModuleForTeacher)
 
 	module.Get("/:id", moduleHandler.GetModuleByID)
+
+	// Routes for questions
+	questionHandler := handlers.NewQuestionHandler(config)
+	modulequestionGroup := module.Group("/:id/question")
+	modulequestionGroup.Post("/", questionHandler.RegisterQuestionForModule)
 
 	// Routes for upload
 	upload := api.Group("/uploads")

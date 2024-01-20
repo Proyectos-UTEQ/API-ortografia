@@ -34,7 +34,7 @@ func RegisterSubscription(userID uint, code string) (Subscription, error) {
 	// Validar si este usuario ya se encuentra suscrito al modulo.
 	result := db.DB.Where("user_id = ? AND module_id = ?", userID, module.ID).First(&sub)
 	if result.Error == nil {
-		return sub, errors.New("El usuario ya se encuentra suscrito al modulo")
+		return sub, errors.New("el usuario ya se encuentra suscrito al modulo")
 	}
 
 	result = db.DB.Create(&sub)
