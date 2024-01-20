@@ -6,12 +6,15 @@ type Question struct {
 	gorm.Model
 	ModuleID         uint
 	Module           Module
+	QuestionnaireID  uint
+	Questionnaire    Questionnaire
 	TextRoot         string
-	Deficulty        int
-	Index            int
+	Difficulty       int
 	TypeQuestion     TypeQuestion
 	QuestionAnswerID uint
+	QuestionAnswer   QuestionAnswer
 	CorrectAnswerID  uint
+	CorrectAnswer    Answer
 }
 
 type TypeQuestion string

@@ -9,10 +9,10 @@ type AnswerUser struct {
 	QuestionID   uint
 	Question     Question
 	UserAnswerID uint
-	//TODO: Falta agregar la relacion UserAnswer.
-	Score       int
-	IsCorrect   bool
-	Feedback    string
-	ChatIssueID uint
-	//TODO: Falta agregar la relacion ChatIssue.
+	UserAnswer   Answer
+	Score        int
+	IsCorrect    bool
+	Feedback     string
+	ChatIssueID  uint
+	ChatIssue    ChatIssue
 }

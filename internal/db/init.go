@@ -11,21 +11,31 @@ import (
 
 var DB *gorm.DB
 
-func ConnectDB(viper *viper.Viper) *gorm.DB {
+func ConnectDB(config *viper.Viper) *gorm.DB {
 
 	// Get config
-	host := viper.GetString("DB_HOST")
-	port := viper.GetString("DB_PORT")
-	user := viper.GetString("DB_USER")
-	password := viper.GetString("DB_PASSWORD")
-	name := viper.GetString("DB_NAME")
-	sslmode := viper.GetString("DB_SSLMODE")
+	host := config.GetString("DB_HOST")
+	port := config.GetString("DB_PORT")
+	user := config.GetString("DB_USER")
+	password := config.GetString("DB_PASSWORD")
+	name := config.GetString("DB_NAME")
+	sslmode := config.GetString("DB_SSLMODE")
 
 	// Build DSN
 	dsn := fmt.Sprintf("host=%v user=%v password=%v dbname=%v port=%v sslmode=%v TimeZone=America/Guayaquil", host, user, password, name, port, sslmode)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
+
+	configDB := &gorm.Config{}
+	if config.GetBool("DB_DEBUG") {
+		configDB = &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Info),
+		}
+	} else {
+		configDB = &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Silent),
+		}
+	}
+
+	db, err := gorm.Open(postgres.Open(dsn), configDB)
 	if err != nil {
 		panic(err)
 	}

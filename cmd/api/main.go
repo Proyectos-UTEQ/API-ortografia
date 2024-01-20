@@ -47,6 +47,16 @@ func main() {
 			&data.ResetPassword{},
 			&data.Module{},
 			&data.Subscription{},
+			&data.Class{},
+			&data.Matricula{},
+			&data.Course{},
+			&data.Question{},
+			&data.HistoryChat{},
+			&data.ChatIssue{},
+			&data.AnswerUser{},
+			&data.Answer{},
+			&data.QuestionAnswer{},
+			&data.Questionnaire{},
 		)
 		if err != nil {
 			fmt.Println(err)
