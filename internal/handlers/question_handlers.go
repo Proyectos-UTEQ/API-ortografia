@@ -60,3 +60,27 @@ func (h *QuestionHandler) RegisterQuestionForModule(c *fiber.Ctx) error {
 
 	return c.JSON(questionEntidad)
 }
+
+// Recupera todas las preguntas de un modulo
+func (h *QuestionHandler) GetQuestionsForModule(c *fiber.Ctx) error {
+
+	id, err := c.ParamsInt("id") // id del modulo
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": "error",
+			"error":   "Error al recuperar el id del modulo",
+		})
+	}
+
+	questions, err := data.GetQuestionsForModule(uint(id))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": "error",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"data": questions,
+	})
+}

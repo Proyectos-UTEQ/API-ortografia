@@ -144,10 +144,15 @@ func main() {
 	questionHandler := handlers.NewQuestionHandler(config)
 	modulequestionGroup := module.Group("/:id/question")
 	modulequestionGroup.Post("/", questionHandler.RegisterQuestionForModule)
+	modulequestionGroup.Get("/", questionHandler.GetQuestionsForModule)
 
 	// Routes for upload
 	upload := api.Group("/uploads")
 	uploadHandler := handlers.NewUploadHandler(config)
+
+	gptHandlers := handlers.NewGPTHandler(config)
+	gptGroup := api.Group("/gpt")
+	gptGroup.Post("/", gptHandlers.GPTTest)
 
 	upload.Post("/", jwtHandler.JWTMiddleware, uploadHandler.UploadFiles)
 	upload.Static("/", "./uploads")

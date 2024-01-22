@@ -33,7 +33,6 @@ const (
 	OrderWord       TypeQuestion = "order_word"
 )
 
-// TODO: funcion para convertir una question entidad a una question API
 func QuestionToAPI(question Question) types.Question {
 	return types.Question{
 		ID:               question.ID,
@@ -47,6 +46,14 @@ func QuestionToAPI(question Question) types.Question {
 		CorrectAnswerID:  question.CorrectAnswerID,
 		CorrectAnswer:    AnswerToAPI(question.CorrectAnswer),
 	}
+}
+
+func QuestionListToAPI(questions []Question) []types.Question {
+	questionList := make([]types.Question, 0)
+	for _, question := range questions {
+		questionList = append(questionList, QuestionToAPI(question))
+	}
+	return questionList
 }
 
 func RegisterQuestionForModule(questionAPI types.Question) (types.Question, error) {
@@ -78,4 +85,14 @@ func RegisterQuestionForModule(questionAPI types.Question) (types.Question, erro
 	}
 
 	return QuestionToAPI(question), nil
+}
+
+// Recupearmos todas las preguntas que pertenezcan al modulo
+func GetQuestionsForModule(moduleID uint) ([]types.Question, error) {
+	questions := []Question{}
+	result := db.DB.Where("module_id = ?", moduleID).Preload("QuestionAnswer").Preload("CorrectAnswer").Find(&questions)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return QuestionListToAPI(questions), nil
 }
