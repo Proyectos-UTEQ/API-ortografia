@@ -145,14 +145,16 @@ func main() {
 	modulequestionGroup := module.Group("/:id/question")
 	modulequestionGroup.Post("/", questionHandler.RegisterQuestionForModule)
 	modulequestionGroup.Get("/", questionHandler.GetQuestionsForModule)
+	modulequestionGroup.Delete("/:idquestion", questionHandler.DeleteQuestion)
+	modulequestionGroup.Put("/:idquestion", questionHandler.UpdateQuestion)
 
 	// Routes for upload
 	upload := api.Group("/uploads")
 	uploadHandler := handlers.NewUploadHandler(config)
 
 	gptHandlers := handlers.NewGPTHandler(config)
-	gptGroup := api.Group("/gpt")
-	gptGroup.Post("/", gptHandlers.GPTTest)
+	gptGroup := api.Group("/gpt", jwtHandler.JWTMiddleware, handlers.Authorization("admin", "teacher"))
+	gptGroup.Get("/generate-question", gptHandlers.GenerateQuestion)
 
 	upload.Post("/", jwtHandler.JWTMiddleware, uploadHandler.UploadFiles)
 	upload.Static("/", "./uploads")

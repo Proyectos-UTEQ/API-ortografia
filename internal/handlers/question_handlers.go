@@ -84,3 +84,54 @@ func (h *QuestionHandler) GetQuestionsForModule(c *fiber.Ctx) error {
 		"data": questions,
 	})
 }
+
+func (h *QuestionHandler) DeleteQuestion(c *fiber.Ctx) error {
+	idquestion, err := c.ParamsInt("idquestion")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": "error",
+			"error":   "Error al recuperar el id de la pregunta",
+		})
+	}
+
+	err = data.DeleteQuestion(uint(idquestion))
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": "error",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
+
+func (h *QuestionHandler) UpdateQuestion(c *fiber.Ctx) error {
+	idquestion, err := c.ParamsInt("idquestion")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": "error",
+			"error":   "Error al recuperar el id de la pregunta",
+		})
+	}
+
+	var question types.Question
+	if err := c.BodyParser(&question); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": "error",
+			"error":   err.Error(),
+		})
+	}
+
+	question.ID = uint(idquestion)
+
+	err = data.UpdateQuestion(question)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": "error",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}

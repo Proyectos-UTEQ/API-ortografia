@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"Proyectos-UTEQ/api-ortografia/internal/interfaces"
 	"Proyectos-UTEQ/api-ortografia/internal/services"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
 
@@ -18,7 +19,7 @@ func NewGPTHandler(config *viper.Viper) *GPTHandler {
 	}
 }
 
-func (g *GPTHandler) GPTTest(c *fiber.Ctx) error {
+func (g *GPTHandler) GenerateQuestion(c *fiber.Ctx) error {
 	var reqContext types.GPT
 
 	if err := c.BodyParser(&reqContext); err != nil {
@@ -35,7 +36,25 @@ func (g *GPTHandler) GPTTest(c *fiber.Ctx) error {
 	// 	})
 	// }
 
-	result, err := services.NewServicoIA(g.config).IARapidTest(reqContext.Context)
+	if err := reqContext.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	var serviceIA interfaces.QuestionIA
+	switch reqContext.Server {
+	case "chatgptapi":
+		serviceIA = services.NewServicoIA(g.config)
+	case "gpts4u":
+		serviceIA = services.NewServiceNewGpts4u(g.config)
+	default:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Server not found",
+		})
+	}
+
+	result, err := serviceIA.GenerateQuestion(reqContext.TypeQuestion, reqContext.Context)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

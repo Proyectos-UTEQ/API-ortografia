@@ -96,3 +96,62 @@ func GetQuestionsForModule(moduleID uint) ([]types.Question, error) {
 	}
 	return QuestionListToAPI(questions), nil
 }
+
+func DeleteQuestion(questionID uint) error {
+	result := db.DB.Delete(&Question{}, questionID)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
+func UpdateQuestion(question types.Question) error {
+	tx := db.DB.Begin()
+
+	questionEntity := Question{
+		Model:            gorm.Model{ID: question.ID},
+		ModuleID:         question.ModuleID,
+		QuestionnaireID:  nil,
+		TextRoot:         question.TextRoot,
+		Difficulty:       question.Difficulty,
+		TypeQuestion:     TypeQuestion(question.TypeQuestion),
+		QuestionAnswerID: question.QuestionAnswerID,
+		QuestionAnswer: QuestionAnswer{
+			Model:          gorm.Model{ID: question.QuestionAnswerID},
+			SelectMode:     SelectMode(question.QuestionAnswer.SelectMode),
+			TextOptions:    pq.StringArray(question.QuestionAnswer.TextOptions),
+			TextToComplete: question.QuestionAnswer.TextToComplete,
+			Hind:           question.QuestionAnswer.Hind,
+		},
+		CorrectAnswerID: question.CorrectAnswerID,
+		CorrectAnswer: Answer{
+			Model:          gorm.Model{ID: question.CorrectAnswerID},
+			TrueOrFalse:    question.CorrectAnswer.TrueOrFalse,
+			TextOpcions:    pq.StringArray(question.CorrectAnswer.TextOpcions),
+			TextToComplete: pq.StringArray(question.CorrectAnswer.TextToComplete),
+		},
+	}
+
+	result := tx.Updates(&questionEntity)
+
+	if result.Error != nil {
+		tx.Rollback()
+		return result.Error
+	}
+
+	result = db.DB.Updates(&questionEntity.QuestionAnswer)
+	if result.Error != nil {
+		tx.Rollback()
+		return result.Error
+	}
+
+	result = db.DB.Updates(&questionEntity.CorrectAnswer)
+	if result.Error != nil {
+		tx.Rollback()
+		return result.Error
+	}
+
+	tx.Commit()
+
+	return nil
+}
