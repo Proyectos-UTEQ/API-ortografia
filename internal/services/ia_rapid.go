@@ -19,15 +19,40 @@ const SchemeJson = `{
     "type_question": "order_word",
     "question_answer": {
         "select_mode": "",
-        "text_options": ["palabra 2", "palabra 1", ...],
+        "text_options": ["palabra 2", "palabra 1" ],
         "text_to_complete": "",
         "hind": "Pista para solucionar la pregunta"
     },
     "correct_answer": {
-        "true_or_false": true, // true or false es un boolean
-        "text_opcions": ["palabra 1", "palabra 2"], // aqui debes poner las respuesta correcta para el tipo de pregunta multi_choice_text, multi_choice_abc, order_word
+        "true_or_false": false,
+        "text_opcions": ["palabra 1", "palabra 2"],
         "text_to_complete": []
     }
+
+	estos seria si estubiera en interface de typescript
+
+	export interface Question {
+		module_id:       number;
+		text_root:       string;
+		difficulty:      number;
+		type_question:   string;
+		question_answer: QuestionAnswer;
+		correct_answer:  CorrectAnswer;
+	}
+	
+	export interface CorrectAnswer {
+		true_or_false:    boolean;
+		text_opcions:     string[];
+		text_to_complete: any[];
+	}
+	
+	export interface QuestionAnswer {
+		select_mode:      string;
+		text_options:     string[];
+		text_to_complete: string;
+		hind:             string;
+	}
+	
 }`
 
 type ServicoIA struct {

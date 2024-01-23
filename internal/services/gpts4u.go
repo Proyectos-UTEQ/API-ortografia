@@ -61,6 +61,8 @@ func (s *ServiceNewGpts4u) GenerateQuestion(typequestion string, text string) (*
 	en el campo text_opcions es un array de string el cual tendra las palabras correctas, este campo solo se llena en caso de que el tipo de pregunta sea multi_choice_text, multi_choice_abc y order_word,
 	en caso de ser order_word el array de string tendra el orden correcto de las palabras.
 	en el campo text_to_complete es un array de string el cual tendra las palabras que se deben completar con pabras.
+	en el campo correct_answer.text_opcions es un array de string en el cual debes poner las respuesta correcta para el tipo de pregunta multi_choice_text, multi_choice_abc, order_word
+	el campo correct_answer.true_or_false puedes elegir entre: true, false. por defecto es false
 	.
 	`, typequestion, text, SchemeJson))
 
