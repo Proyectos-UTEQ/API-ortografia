@@ -12,7 +12,7 @@ type Question struct {
 	Difficulty      int     `json:"difficulty"`
 	TypeQuestion    string  `json:"type_question" validate:"required,oneof=true_false multi_choice_text multi_choice_abc complete_word order_word"`
 	Options         Options `json:"options,omitempty"`
-	CorrectAnswerID uint    `json:"correct_answer_id,omitempty"`
+	CorrectAnswerID *uint   `json:"correct_answer_id,omitempty"`
 	CorrectAnswer   *Answer `json:"correct_answer,omitempty"`
 }
 

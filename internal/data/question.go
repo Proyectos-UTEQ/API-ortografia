@@ -41,7 +41,7 @@ func QuestionToAPI(question Question) types.Question {
 		Difficulty:      question.Difficulty,
 		TypeQuestion:    string(question.TypeQuestion),
 		Options:         QuestionAnswerToAPI(question.Options),
-		CorrectAnswerID: question.CorrectAnswerID,
+		CorrectAnswerID: &question.CorrectAnswerID,
 		CorrectAnswer:   AnswerToAPI(&question.CorrectAnswer),
 	}
 }
@@ -120,9 +120,9 @@ func UpdateQuestion(question types.Question) error {
 			TextToComplete: question.Options.TextToComplete,
 			Hind:           question.Options.Hind,
 		},
-		CorrectAnswerID: question.CorrectAnswerID,
+		CorrectAnswerID: *question.CorrectAnswerID,
 		CorrectAnswer: Answer{
-			Model:          gorm.Model{ID: question.CorrectAnswerID},
+			Model:          gorm.Model{ID: *question.CorrectAnswerID},
 			TrueOrFalse:    question.CorrectAnswer.TrueOrFalse,
 			TextOpcions:    pq.StringArray(question.CorrectAnswer.TextOpcions),
 			TextToComplete: pq.StringArray(question.CorrectAnswer.TextToComplete),

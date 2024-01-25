@@ -104,8 +104,11 @@ func TestByID(testid uint) (types.TestModule, error) {
 
 	// recuperamos las respuestas del usuario.
 	for i := range answerUser {
+		questionAPI := QuestionToAPI(answerUser[i].Question)
+		questionAPI.CorrectAnswerID = nil
+		questionAPI.CorrectAnswer = nil
 		responseModuleTest.TestModuleQuestionAnswers = append(responseModuleTest.TestModuleQuestionAnswers, types.TestModuleQuestionAnswer{
-			Question:   QuestionToAPI(answerUser[i].Question),
+			Question:   questionAPI,
 			AnswerUser: AnswerUserToAPI(answerUser[i]),
 		})
 	}
