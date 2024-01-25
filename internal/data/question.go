@@ -10,17 +10,16 @@ import (
 
 type Question struct {
 	gorm.Model
-	ModuleID         *uint
-	Module           Module
-	QuestionnaireID  *uint
-	Questionnaire    Questionnaire
-	TextRoot         string
-	Difficulty       int
-	TypeQuestion     TypeQuestion
-	QuestionAnswerID uint
-	QuestionAnswer   QuestionAnswer
-	CorrectAnswerID  uint
-	CorrectAnswer    Answer
+	ModuleID        *uint
+	Module          Module
+	QuestionnaireID *uint
+	Questionnaire   Questionnaire
+	TextRoot        string
+	Difficulty      int
+	TypeQuestion    TypeQuestion
+	Options         Options `gorm:"embedded;embeddedPrefix:options_"`
+	CorrectAnswerID uint
+	CorrectAnswer   Answer
 }
 
 type TypeQuestion string
@@ -35,16 +34,15 @@ const (
 
 func QuestionToAPI(question Question) types.Question {
 	return types.Question{
-		ID:               question.ID,
-		ModuleID:         question.ModuleID,
-		QuestionnaireID:  question.QuestionnaireID,
-		TextRoot:         question.TextRoot,
-		Difficulty:       question.Difficulty,
-		TypeQuestion:     string(question.TypeQuestion),
-		QuestionAnswerID: question.QuestionAnswerID,
-		QuestionAnswer:   QuestionAnswerToAPI(question.QuestionAnswer),
-		CorrectAnswerID:  question.CorrectAnswerID,
-		CorrectAnswer:    AnswerToAPI(question.CorrectAnswer),
+		ID:              question.ID,
+		ModuleID:        question.ModuleID,
+		QuestionnaireID: question.QuestionnaireID,
+		TextRoot:        question.TextRoot,
+		Difficulty:      question.Difficulty,
+		TypeQuestion:    string(question.TypeQuestion),
+		Options:         QuestionAnswerToAPI(question.Options),
+		CorrectAnswerID: question.CorrectAnswerID,
+		CorrectAnswer:   AnswerToAPI(&question.CorrectAnswer),
 	}
 }
 
@@ -65,11 +63,11 @@ func RegisterQuestionForModule(questionAPI types.Question) (types.Question, erro
 		TextRoot:        questionAPI.TextRoot,
 		Difficulty:      questionAPI.Difficulty,
 		TypeQuestion:    TypeQuestion(questionAPI.TypeQuestion),
-		QuestionAnswer: QuestionAnswer{
-			SelectMode:     SelectMode(questionAPI.QuestionAnswer.SelectMode),
-			TextOptions:    pq.StringArray(questionAPI.QuestionAnswer.TextOptions),
-			TextToComplete: questionAPI.QuestionAnswer.TextToComplete,
-			Hind:           questionAPI.QuestionAnswer.Hind,
+		Options: Options{
+			SelectMode:     SelectMode(questionAPI.Options.SelectMode),
+			TextOptions:    pq.StringArray(questionAPI.Options.TextOptions),
+			TextToComplete: questionAPI.Options.TextToComplete,
+			Hind:           questionAPI.Options.Hind,
 		},
 		CorrectAnswer: Answer{
 			TrueOrFalse:    questionAPI.CorrectAnswer.TrueOrFalse,
@@ -89,8 +87,9 @@ func RegisterQuestionForModule(questionAPI types.Question) (types.Question, erro
 
 // Recupearmos todas las preguntas que pertenezcan al modulo
 func GetQuestionsForModule(moduleID uint) ([]types.Question, error) {
+
 	questions := []Question{}
-	result := db.DB.Where("module_id = ?", moduleID).Preload("QuestionAnswer").Preload("CorrectAnswer").Find(&questions)
+	result := db.DB.Where("module_id = ?", moduleID).Preload("CorrectAnswer").Order("created_at").Find(&questions)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -109,19 +108,17 @@ func UpdateQuestion(question types.Question) error {
 	tx := db.DB.Begin()
 
 	questionEntity := Question{
-		Model:            gorm.Model{ID: question.ID},
-		ModuleID:         question.ModuleID,
-		QuestionnaireID:  nil,
-		TextRoot:         question.TextRoot,
-		Difficulty:       question.Difficulty,
-		TypeQuestion:     TypeQuestion(question.TypeQuestion),
-		QuestionAnswerID: question.QuestionAnswerID,
-		QuestionAnswer: QuestionAnswer{
-			Model:          gorm.Model{ID: question.QuestionAnswerID},
-			SelectMode:     SelectMode(question.QuestionAnswer.SelectMode),
-			TextOptions:    pq.StringArray(question.QuestionAnswer.TextOptions),
-			TextToComplete: question.QuestionAnswer.TextToComplete,
-			Hind:           question.QuestionAnswer.Hind,
+		Model:           gorm.Model{ID: question.ID},
+		ModuleID:        question.ModuleID,
+		QuestionnaireID: nil,
+		TextRoot:        question.TextRoot,
+		Difficulty:      question.Difficulty,
+		TypeQuestion:    TypeQuestion(question.TypeQuestion),
+		Options: Options{
+			SelectMode:     SelectMode(question.Options.SelectMode),
+			TextOptions:    pq.StringArray(question.Options.TextOptions),
+			TextToComplete: question.Options.TextToComplete,
+			Hind:           question.Options.Hind,
 		},
 		CorrectAnswerID: question.CorrectAnswerID,
 		CorrectAnswer: Answer{
@@ -132,6 +129,7 @@ func UpdateQuestion(question types.Question) error {
 		},
 	}
 
+	// se actualiza la entidad de pregunta.
 	result := tx.Updates(&questionEntity)
 
 	if result.Error != nil {
@@ -139,12 +137,14 @@ func UpdateQuestion(question types.Question) error {
 		return result.Error
 	}
 
-	result = db.DB.Updates(&questionEntity.QuestionAnswer)
-	if result.Error != nil {
-		tx.Rollback()
-		return result.Error
-	}
+	// Ya no se realiza esta operacion porque las opciones ya estan enmbebidas.
+	// result = db.DB.Updates(&questionEntity.Options)
+	// if result.Error != nil {
+	// 	tx.Rollback()
+	// 	return result.Error
+	// }
 
+	// se actualiza la respuesta correcta
 	result = db.DB.Updates(&questionEntity.CorrectAnswer)
 	if result.Error != nil {
 		tx.Rollback()
@@ -158,8 +158,8 @@ func UpdateQuestion(question types.Question) error {
 
 func GenerateQuestions(moduleID uint, limit int) ([]Question, error) {
 
-	questions := []Question{}
-	result := db.DB.Where("module_id = ?", moduleID).Order("RANDOM()").Preload("QuestionAnswer").Limit(limit).Find(&questions)
+	var questions []Question
+	result := db.DB.Where("module_id = ?", moduleID).Order("RANDOM()").Limit(limit).Find(&questions)
 	if result.Error != nil {
 		return nil, result.Error
 	}

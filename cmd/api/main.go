@@ -55,7 +55,6 @@ func main() {
 			&data.ChatIssue{},
 			&data.AnswerUser{},
 			&data.Answer{},
-			&data.QuestionAnswer{},
 			&data.Questionnaire{},
 			&data.TestModule{},
 		)

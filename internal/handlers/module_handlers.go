@@ -143,7 +143,7 @@ func (h *ModuleHandler) GetModulesForTeacher(c *fiber.Ctx) error {
 	}
 
 	// validamos
-	paginated.Validate()
+	_ = paginated.Validate()
 
 	// obtenemos los modulos
 	modules, details, err := data.GetModulesForTeacher(&paginated, claims.UserAPI.ID)
@@ -176,7 +176,7 @@ func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
 	}
 
 	// validamos
-	paginated.Validate()
+	_ = paginated.Validate()
 
 	// obtenemos los modulos
 	modules, details, err := data.GetModule(&paginated)
@@ -211,7 +211,7 @@ func (h *ModuleHandler) GetModuleWithIsSubscribed(c *fiber.Ctx) error {
 	}
 
 	// validamos
-	paginated.Validate()
+	_ = paginated.Validate()
 
 	// obtenemos los modulos
 	modules, details, err := data.GetModuleWithUserSubscription(&paginated, claims.UserAPI.ID)
@@ -287,7 +287,7 @@ func (h *ModuleHandler) Subscriptions(c *fiber.Ctx) error {
 	}
 
 	// validamos
-	paginated.Validate()
+	_ = paginated.Validate()
 
 	claims := utils.GetClaims(c)
 
@@ -393,7 +393,7 @@ func (h *ModuleHandler) GenerateTest(c *fiber.Ctx) error {
 
 func (h *ModuleHandler) GetTest(c *fiber.Ctx) error {
 
-	testid, err := c.ParamsInt("id")
+	testId, err := c.ParamsInt("id")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
@@ -401,7 +401,7 @@ func (h *ModuleHandler) GetTest(c *fiber.Ctx) error {
 		})
 	}
 
-	test, err := data.TestByID(uint(testid))
+	test, err := data.TestByID(uint(testId))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -455,7 +455,7 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 		answerUserDB.Score = 10
 		answerUserDB.Feedback = "Respuesta correcta"
 	case "multi_choice_text":
-		if answerUserDB.Question.QuestionAnswer.SelectMode == "single" {
+		if answerUserDB.Question.Options.SelectMode == "single" {
 			// si no tiene ninguna opcion selecionada automaticamente es incorrecta
 			if len(answerUserDB.Answer.TextToComplete) < 1 {
 				answerUserDB.IsCorrect = false

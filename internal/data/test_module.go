@@ -19,7 +19,7 @@ type TestModule struct {
 	Qualification float32
 }
 
-func GenerateTestForStudent(userid uint, moduleid uint) (testid uint, err error) {
+func GenerateTestForStudent(userid uint, moduleID uint) (testId uint, err error) {
 
 	// crear el objeto test Module
 
@@ -27,7 +27,7 @@ func GenerateTestForStudent(userid uint, moduleid uint) (testid uint, err error)
 
 	test := TestModule{
 		UserID:        userid,
-		ModuleID:      moduleid,
+		ModuleID:      moduleID,
 		Started:       time.Now(),
 		Qualification: 0,
 	}
@@ -40,7 +40,7 @@ func GenerateTestForStudent(userid uint, moduleid uint) (testid uint, err error)
 	}
 
 	// Selecionamos 10 preguntas aleatorias del modulo.
-	questions, err := GenerateQuestions(moduleid, 10)
+	questions, err := GenerateQuestions(moduleID, 10)
 	if err != nil {
 		return 0, result.Error
 	}
@@ -87,7 +87,7 @@ func TestByID(testid uint) (types.TestModule, error) {
 
 	// recuperamos las preguntas.
 	var answerUser []AnswerUser
-	result = db.DB.Preload("Answer").Preload("Question.QuestionAnswer").Order("responded desc").Where("test_module_id = ?", test.ID).Find(&answerUser)
+	result = db.DB.Preload("Answer").Preload("Question").Order("responded desc").Where("test_module_id = ?", test.ID).Find(&answerUser)
 	if result.Error != nil {
 		return types.TestModule{}, result.Error
 	}
@@ -104,19 +104,9 @@ func TestByID(testid uint) (types.TestModule, error) {
 
 	// recuperamos las respuestas del usuario.
 	for i := range answerUser {
-
-		responseModuleTest.AnswerUser = append(responseModuleTest.AnswerUser, types.AnswerUser{
-			AnswerUserID: answerUser[i].ID,
-			TestModuleID: answerUser[i].TestModuleID,
-			QuestionID:   answerUser[i].QuestionID,
-			Question:     QuestionToAPI(answerUser[i].Question),
-			AnswerID:     answerUser[i].AnswerID,
-			Answer:       AnswerToAPI(answerUser[i].Answer),
-			Score:        answerUser[i].Score,
-			IsCorrect:    answerUser[i].IsCorrect,
-			Responded:    answerUser[i].Responded,
-			Feedback:     answerUser[i].Feedback,
-			ChatIssueID:  answerUser[i].ChatIssueID,
+		responseModuleTest.TestModuleQuestionAnswers = append(responseModuleTest.TestModuleQuestionAnswers, types.TestModuleQuestionAnswer{
+			Question:   QuestionToAPI(answerUser[i].Question),
+			AnswerUser: AnswerUserToAPI(answerUser[i]),
 		})
 	}
 

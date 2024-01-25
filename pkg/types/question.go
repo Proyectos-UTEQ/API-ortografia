@@ -5,16 +5,15 @@ import (
 )
 
 type Question struct {
-	ID               uint           `json:"id"`
-	ModuleID         *uint          `json:"module_id,omitempty"`
-	QuestionnaireID  *uint          `json:"questionnaire_id,omitempty"`
-	TextRoot         string         `json:"text_root"`
-	Difficulty       int            `json:"difficulty"`
-	TypeQuestion     string         `json:"type_question" validate:"required,oneof=true_false multi_choice_text multi_choice_abc complete_word order_word"`
-	QuestionAnswerID uint           `json:"question_answer_id,omitempty"`
-	QuestionAnswer   QuestionAnswer `json:"question_answer,omitempty"`
-	CorrectAnswerID  uint           `json:"correct_answer_id,omitempty"`
-	CorrectAnswer    Answer         `json:"correct_answer,omitempty"`
+	ID              uint    `json:"id"`
+	ModuleID        *uint   `json:"module_id,omitempty"`
+	QuestionnaireID *uint   `json:"questionnaire_id,omitempty"`
+	TextRoot        string  `json:"text_root"`
+	Difficulty      int     `json:"difficulty"`
+	TypeQuestion    string  `json:"type_question" validate:"required,oneof=true_false multi_choice_text multi_choice_abc complete_word order_word"`
+	Options         Options `json:"options,omitempty"`
+	CorrectAnswerID uint    `json:"correct_answer_id,omitempty"`
+	CorrectAnswer   *Answer `json:"correct_answer,omitempty"`
 }
 
 func (q *Question) Validate() error {
@@ -27,19 +26,19 @@ func (q *Question) Validate() error {
 	}
 
 	if q.TypeQuestion == "multi_choice_text" || q.TypeQuestion == "multi_choice_abc" {
-		if len(q.QuestionAnswer.TextOptions) == 0 {
+		if len(q.Options.TextOptions) == 0 {
 			return fmt.Errorf("the text options cannot be empty")
 		}
 
-		if q.QuestionAnswer.SelectMode == "" {
+		if q.Options.SelectMode == "" {
 			return fmt.Errorf("the select mode cannot be empty")
 		}
 
-		if q.QuestionAnswer.SelectMode != "single" && q.QuestionAnswer.SelectMode != "multiple" {
+		if q.Options.SelectMode != "single" && q.Options.SelectMode != "multiple" {
 			return fmt.Errorf("the select mode must be single or multiple")
 		}
 
-		for _, option := range q.QuestionAnswer.TextOptions {
+		for _, option := range q.Options.TextOptions {
 			if option == "" {
 				return fmt.Errorf("the text options cannot be empty")
 			}
@@ -47,7 +46,7 @@ func (q *Question) Validate() error {
 
 		// validar que la respuesta este dentro de las opciones.
 		ok := false
-		for _, option := range q.QuestionAnswer.TextOptions {
+		for _, option := range q.Options.TextOptions {
 			if option == q.CorrectAnswer.TextOpcions[0] {
 				ok = true
 				break
@@ -59,7 +58,7 @@ func (q *Question) Validate() error {
 	}
 
 	if q.TypeQuestion == "complete_word" {
-		if q.QuestionAnswer.TextToComplete == "" {
+		if q.Options.TextToComplete == "" {
 			return fmt.Errorf("the text to complete cannot be empty")
 		}
 
@@ -69,7 +68,7 @@ func (q *Question) Validate() error {
 	}
 
 	if q.TypeQuestion == "order_word" {
-		if len(q.QuestionAnswer.TextOptions) == 0 {
+		if len(q.Options.TextOptions) == 0 {
 			return fmt.Errorf("the text to complete cannot be empty")
 		}
 
@@ -81,8 +80,7 @@ func (q *Question) Validate() error {
 	return nil
 }
 
-type QuestionAnswer struct {
-	ID             uint     `json:"id"`
+type Options struct {
 	SelectMode     string   `json:"select_mode" validate:"required,oneof=single multiple"`
 	TextOptions    []string `json:"text_options"`
 	TextToComplete string   `json:"text_to_complete"`

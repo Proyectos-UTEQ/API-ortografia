@@ -18,6 +18,7 @@ func NewQuestionHandler(config *viper.Viper) *QuestionHandler {
 	}
 }
 
+// Registra una nueva pregunta para un modulo en concreto.
 func (h *QuestionHandler) RegisterQuestionForModule(c *fiber.Ctx) error {
 
 	id, err := c.ParamsInt("id") // id del modulo

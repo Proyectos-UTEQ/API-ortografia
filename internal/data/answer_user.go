@@ -2,6 +2,7 @@ package data
 
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/db"
+	"Proyectos-UTEQ/api-ortografia/pkg/types"
 
 	"gorm.io/gorm"
 )
@@ -20,6 +21,21 @@ type AnswerUser struct {
 	Feedback     string
 	ChatIssueID  *uint
 	ChatIssue    ChatIssue
+}
+
+func AnswerUserToAPI(a AnswerUser) types.AnswerUser {
+	return types.AnswerUser{
+		AnswerUserID: a.ID,
+		TestModuleID: a.TestModuleID,
+		QuestionID:   a.QuestionID,
+		Question:     nil,
+		AnswerID:     a.AnswerID,
+		Answer:       AnswerToAPI(&a.Answer),
+		Responded:    a.Responded,
+		Score:        a.Score,
+		IsCorrect:    a.IsCorrect,
+		Feedback:     a.Feedback,
+	}
 }
 
 func GetAnswerUserByID(id uint) (AnswerUser, error) {
