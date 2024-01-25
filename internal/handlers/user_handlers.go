@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/data"
+	"Proyectos-UTEQ/api-ortografia/internal/services"
+	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
 	"fmt"
 	"log"
@@ -9,7 +11,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/resendlabs/resend-go"
 	"github.com/spf13/viper"
 )
 
@@ -42,6 +43,12 @@ func (h *UserHandler) HandlerSignin(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error al iniciar sesion", "data": err.Error()})
 	}
 
+	if user.URLAvatar == "" {
+		user.URLAvatar = fmt.Sprintf("https://ui-avatars.com/api/?name=%s&background=5952A2&color=fff&size=128", user.FirstName)
+	} else {
+		user.URLAvatar = h.config.GetString("APP_HOST") + user.URLAvatar
+	}
+
 	// generá el JWT para el usuario.
 	claims := types.UserClaims{
 		UserAPI: *user,
@@ -50,7 +57,7 @@ func (h *UserHandler) HandlerSignin(c *fiber.Ctx) error {
 		},
 	}
 
-	secret := h.config.GetString("JWT_SECRET")
+	secret := h.config.GetString("APP_JWT_SECRET")
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	ss, err := token.SignedString([]byte(secret))
@@ -68,8 +75,8 @@ func (h *UserHandler) HandlerSignin(c *fiber.Ctx) error {
 func (h *UserHandler) HandlerSignup(c *fiber.Ctx) error {
 
 	// parseamos los datos
-	var user types.UserAPI
-	if err := c.BodyParser(&user); err != nil {
+	var userAPI types.UserAPI
+	if err := c.BodyParser(&userAPI); err != nil {
 		log.Println("Error al registrar usuario", err)
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
@@ -78,7 +85,7 @@ func (h *UserHandler) HandlerSignup(c *fiber.Ctx) error {
 	}
 
 	// Validar datos para registro inicial.
-	resp, err := types.Validate(&user)
+	resp, err := types.Validate(&userAPI)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
@@ -88,16 +95,19 @@ func (h *UserHandler) HandlerSignup(c *fiber.Ctx) error {
 	}
 
 	// Crea el usuario en la base de datos.
-	err = data.Register(&user)
+	user, err := data.Register(&userAPI)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Error al registrar usuario",
-			"data":    err,
+			"data":    err.Error(),
 		})
 	}
 
-	return c.JSON(fiber.Map{"status": "success", "message": "User created", "data": user})
+	// convertir los datos a un usuario api
+	result := data.UserToAPI(*user)
+
+	return c.JSON(fiber.Map{"status": "success", "message": "User created", "data": result})
 }
 
 func (h *UserHandler) HandlerResetPassword(c *fiber.Ctx) error {
@@ -128,7 +138,7 @@ func (h *UserHandler) HandlerResetPassword(c *fiber.Ctx) error {
 		},
 	}
 
-	secret := h.config.GetString("JWT_SECRET")
+	secret := h.config.GetString("APP_JWT_SECRET")
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	ss, err := token.SignedString([]byte(secret))
@@ -142,28 +152,19 @@ func (h *UserHandler) HandlerResetPassword(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error al guardar el token", "data": err.Error()})
 	}
 
-	apikey := h.config.GetString("KEY_RESEND")
-	client := resend.NewClient(apikey)
+	// make message to send
+	messageToSend := fmt.Sprintf(`Hola, %s %s. Haga click en el siguiente enlace para reestablecer su contraseña: http://localhost:3000/reset-password/%s`, user.FirstName, user.LastName, ss)
 
-	params := &resend.SendEmailRequest{
-		From:    "onboarding@resend.dev",
-		To:      []string{resetPassword.Email},
-		Subject: "Reestablece tu contraseña",
-		Html: fmt.Sprintf(`
-		<h1>Reestablece tu contraseña</h1>
-		<p>Haga click en el siguiente enlace para reestablecer su contraseña</p>
-		<p>Token: %s</p>
-		<p>El token tiene una duracion de 24 horas.</p>
-	`, ss),
-	}
+	emailNotifier := services.NewEmailNotifier(h.config, []string{user.Email}, "Reestablece tu contraseña")
+	telegramNotifier := services.NewTelegramNotifier(h.config, user.TelegramID)
 
-	_, err = client.Emails.Send(params)
+	err = utils.ResetPassword(emailNotifier, messageToSend, "https://app-poliword.onrender.com/auth/forgot-password/"+ss)
 	if err != nil {
-		fmt.Println(err)
-		return c.Status(500).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Error al enviar el correo electronico",
-		})
+		log.Println(err)
+	}
+	err = utils.ResetPassword(telegramNotifier, "Presiona el siguiente boton para resetear tu contraseña", "https://app-poliword.onrender.com/auth/forgot-password?token="+ss)
+	if err != nil {
+		log.Println(err)
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Revisa tu correo electronico"})
@@ -180,7 +181,7 @@ func (h *UserHandler) HandlerChangePassword(c *fiber.Ctx) error {
 	}
 
 	// Parsear los datos del token
-	secret := h.config.GetString("JWT_SECRET")
+	secret := h.config.GetString("APP_JWT_SECRET")
 
 	token, err := jwt.ParseWithClaims(changePassword.Token, &types.UserClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
