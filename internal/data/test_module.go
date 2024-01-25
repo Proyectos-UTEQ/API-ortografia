@@ -87,7 +87,7 @@ func TestByID(testid uint) (types.TestModule, error) {
 
 	// recuperamos las preguntas.
 	var answerUser []AnswerUser
-	result = db.DB.Preload("Answer").Preload("Question.QuestionAnswer").Where("test_module_id = ?", test.ID).Find(&answerUser)
+	result = db.DB.Preload("Answer").Preload("Question.QuestionAnswer").Order("responded desc").Where("test_module_id = ?", test.ID).Find(&answerUser)
 	if result.Error != nil {
 		return types.TestModule{}, result.Error
 	}
