@@ -7,10 +7,10 @@ type TestModule struct {
 	CreatedAt                 string                     `json:"created_at"`
 	ModuleID                  uint                       `json:"module_id"`
 	Module                    Module                     `json:"module"`
-	Started                   string                     `json:"started"`
-	Finished                  string                     `json:"finished"`
+	Started                   *string                    `json:"started"`
+	Finished                  *string                    `json:"finished"`
 	Qualification             float32                    `json:"qualification"`
-	TestModuleQuestionAnswers []TestModuleQuestionAnswer `json:"test_module_question_answers"`
+	TestModuleQuestionAnswers []TestModuleQuestionAnswer `json:"test_module_question_answers,omitempty"`
 }
 
 // pregunta y respuesta del usuario para el test module

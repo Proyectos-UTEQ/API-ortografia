@@ -2,6 +2,7 @@ package data
 
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/db"
+	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
 	"time"
 
@@ -14,9 +15,30 @@ type TestModule struct {
 	User          User
 	ModuleID      uint
 	Module        Module
-	Started       time.Time
-	Finished      time.Time
+	Started       *time.Time
+	Finished      *time.Time
 	Qualification float32
+}
+
+func TestModuleToAPI(module TestModule) types.TestModule {
+	return types.TestModule{
+		ID:                        module.ID,
+		CreatedAt:                 utils.GetFullDate(module.CreatedAt),
+		Module:                    ModuleToApi(module.Module),
+		Started:                   utils.GetFullDateOrNull(module.Started),
+		Finished:                  utils.GetFullDateOrNull(module.Finished),
+		Qualification:             module.Qualification,
+		TestModuleQuestionAnswers: nil,
+	}
+}
+
+// TestsModuleToAPI convierte una lista de testModule para el frontend.
+func TestsModuleToAPI(testsModules []TestModule) []types.TestModule {
+	var testModulesAPI []types.TestModule
+	for _, v := range testsModules {
+		testModulesAPI = append(testModulesAPI, TestModuleToAPI(v))
+	}
+	return testModulesAPI
 }
 
 func GenerateTestForStudent(userid uint, moduleID uint) (testId uint, err error) {
@@ -24,11 +46,12 @@ func GenerateTestForStudent(userid uint, moduleID uint) (testId uint, err error)
 	// crear el objeto test Module
 
 	tx := db.DB.Begin()
-
+	now := time.Now()
 	test := TestModule{
 		UserID:        userid,
 		ModuleID:      moduleID,
-		Started:       time.Now(),
+		Started:       &now,
+		Finished:      nil,
 		Qualification: 0,
 	}
 
@@ -97,8 +120,8 @@ func TestByID(testid uint) (types.TestModule, error) {
 		CreatedAt:     test.CreatedAt.Format("02/01/2006 15:04:05"),
 		ModuleID:      test.ModuleID,
 		Module:        ModuleToApi(test.Module),
-		Started:       test.Started.Format("02/01/2006 15:04:05"),
-		Finished:      test.Finished.Format("02/01/2006 15:04:05"),
+		Started:       utils.GetFullDateOrNull(test.Started),
+		Finished:      utils.GetFullDateOrNull(test.Finished),
 		Qualification: test.Qualification,
 	}
 
@@ -132,8 +155,8 @@ func FinishTest(testid uint) (types.FinishTest, error) {
 	for i := range answersUser {
 		test.Qualification += float32(answersUser[i].Score)
 	}
-
-	test.Finished = time.Now()
+	now := time.Now()
+	test.Finished = &now
 
 	// actualizo el test.
 	result := tx.Model(&TestModule{}).Select("qualification", "finished").Where("ID = ?", test.ID).Updates(test)
@@ -149,4 +172,19 @@ func FinishTest(testid uint) (types.FinishTest, error) {
 		Qualification: test.Qualification,
 		TestID:        test.ID,
 	}, nil
+}
+
+func GetMyTest(userId, moduleId uint) ([]TestModule, error) {
+	var testsModule []TestModule
+
+	// Recuperamos los datos de la db.
+	result := db.DB.
+		Where("user_id = ? and module_id = ?", userId, moduleId).
+		Preload("User").Preload("Module.CreatedBy").Find(&testsModule)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return testsModule, nil
 }

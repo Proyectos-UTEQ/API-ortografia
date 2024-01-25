@@ -141,6 +141,7 @@ func main() {
 	module.Get("/:id", moduleHandler.GetModuleByID)
 
 	module.Post("/:id/test", handlers.Authorization("student"), moduleHandler.GenerateTest)
+	module.Get("/:id/test/my-tests", handlers.Authorization("student"), moduleHandler.GetMyTest)
 	module.Get("/test/:id", handlers.Authorization("student"), moduleHandler.GetTest)
 	// Validación de pregunta
 	module.Put("/validate-answer/:answer_user_id", handlers.Authorization("student"), moduleHandler.ValidationAnswerForTestModule)

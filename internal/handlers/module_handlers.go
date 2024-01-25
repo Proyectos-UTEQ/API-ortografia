@@ -568,3 +568,21 @@ func (h *ModuleHandler) FinishTest(c *fiber.Ctx) error {
 
 	return c.JSON(finishTest)
 }
+
+// GetMyTest recupera todos los test de un usuario en un modulo especifico.
+func (h *ModuleHandler) GetMyTest(c *fiber.Ctx) error {
+	claims := utils.GetClaims(c)
+	idModule, err := c.ParamsInt("id")
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	tests, err := data.GetMyTest(claims.UserAPI.ID, uint(idModule))
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	testsAPI := data.TestsModuleToAPI(tests)
+
+	return c.JSON(testsAPI)
+}
