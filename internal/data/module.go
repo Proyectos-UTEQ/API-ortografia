@@ -70,11 +70,24 @@ func ModuleToApi(module Module) types.Module {
 		ShortDescription: module.ShortDescription,
 		TextRoot:         module.TextRoot,
 		ImgBackURL:       module.ImgBackURL,
-		Difficulty:       string(module.Difficulty),
+		Difficulty:       DifficultyToFrontend(string(module.Difficulty)),
 		PointsToEarn:     module.PointsToEarn,
 		Index:            module.Index,
 		IsPublic:         module.IsPublic,
 	}
+}
+
+func DifficultyToFrontend(difficulty string) string {
+	switch difficulty {
+	case "easy":
+		return "Fácil"
+	case "medium":
+		return "Medio"
+	case "hard":
+		return "Difícil"
+	}
+
+	return "Desconocido"
 }
 
 func RegisterModuleForTeacher(module *types.Module, userid uint) (types.Module, error) {

@@ -57,6 +57,7 @@ func main() {
 			&data.Answer{},
 			&data.QuestionAnswer{},
 			&data.Questionnaire{},
+			&data.TestModule{},
 		)
 		if err != nil {
 			fmt.Println(err)
@@ -139,6 +140,12 @@ func main() {
 		moduleHandler.CreateModuleForTeacher)
 
 	module.Get("/:id", moduleHandler.GetModuleByID)
+
+	module.Post("/:id/test", handlers.Authorization("student"), moduleHandler.GenerateTest)
+	module.Get("/test/:id", handlers.Authorization("student"), moduleHandler.GetTest)
+	// Validación de pregunta
+	module.Put("/validate-answer/:answer_user_id", handlers.Authorization("student"), moduleHandler.ValidationAnswerForTestModule)
+	module.Put("/test/:id/finish", handlers.Authorization("student"), moduleHandler.FinishTest)
 
 	// Routes for questions
 	questionHandler := handlers.NewQuestionHandler(config)

@@ -155,3 +155,13 @@ func UpdateQuestion(question types.Question) error {
 
 	return nil
 }
+
+func GenerateQuestions(moduleID uint, limit int) ([]Question, error) {
+
+	questions := []Question{}
+	result := db.DB.Where("module_id = ?", moduleID).Order("RANDOM()").Preload("QuestionAnswer").Limit(limit).Find(&questions)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return questions, nil
+}

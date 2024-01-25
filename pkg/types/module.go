@@ -22,3 +22,10 @@ type ModuleUser struct {
 	Module
 	IsSubscribed bool `json:"is_subscribed"`
 }
+
+// ModuleTestUser representa un modulo con sus preguntas para que el frontend pueda ralizar
+// el proceso de prueba a un usuario.
+// type ModuleTestUser struct {
+// 	Module    Module     `json:"module"`
+// 	Questions []Question `json:"questions"`
+// }

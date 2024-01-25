@@ -359,3 +359,212 @@ func (h *ModuleHandler) GetModuleByID(c *fiber.Ctx) error {
 
 	return c.JSON(moduleResponse)
 }
+
+func (h *ModuleHandler) GenerateTest(c *fiber.Ctx) error {
+
+	// se debe crear un test en la base de datos.
+	// cada test debe tener un total de 10 preguntas.
+	// se debe recupear el modulo por el id
+	// se debe generar las 10 preguntas para realizar el test.
+	// si el usuario no completa las 10 preguntas perdera todo el progreso.
+
+	claims := utils.GetClaims(c)
+
+	idModule, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error al parsear el id del modulo",
+		})
+	}
+
+	testid, err := data.GenerateTestForStudent(claims.UserAPI.ID, uint(idModule))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"testid": testid,
+	})
+}
+
+func (h *ModuleHandler) GetTest(c *fiber.Ctx) error {
+
+	testid, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error al parsear el id del test",
+		})
+	}
+
+	test, err := data.TestByID(uint(testid))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
+
+	return c.JSON(test)
+
+}
+
+func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
+	idquestion, err := c.ParamsInt("answer_user_id")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": "error",
+			"error":   "Error al recuperar el id de la pregunta",
+		})
+	}
+
+	var answer types.Answer
+	if err := c.BodyParser(&answer); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": "error",
+			"error":   err.Error(),
+		})
+	}
+
+	// Evalular la respuesta del estudiante.
+	// Recuperar la answer_user que esta en la base de datos.
+	answerUserDB, err := data.GetAnswerUserByID(uint(idquestion))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": "error",
+			"error":   err.Error(),
+		})
+	}
+
+	// establecemos la nueva respuesta del estudiante.
+	answerUserDB.Answer = data.Answer{
+		TrueOrFalse:    answer.TrueOrFalse,
+		TextOpcions:    answer.TextOpcions,
+		TextToComplete: answer.TextToComplete,
+	}
+
+	// Evaluación de la pregunta.
+	answerUserDB.Responded = true
+	switch answerUserDB.Question.TypeQuestion {
+	case "true_or_false":
+		answerUserDB.IsCorrect = answerUserDB.Question.CorrectAnswer.TrueOrFalse == answerUserDB.Answer.TrueOrFalse
+		answerUserDB.Score = 10
+		answerUserDB.Feedback = "Respuesta correcta"
+	case "multi_choice_text":
+		if answerUserDB.Question.QuestionAnswer.SelectMode == "single" {
+			// si no tiene ninguna opcion selecionada automaticamente es incorrecta
+			if len(answerUserDB.Answer.TextToComplete) < 1 {
+				answerUserDB.IsCorrect = false
+				answerUserDB.Score = 0
+			} else {
+				answerUserDB.IsCorrect = utils.ContainsString(answerUserDB.Question.CorrectAnswer.TextOpcions, answerUserDB.Answer.TextToComplete[0])
+				answerUserDB.Score = 10
+			}
+		} else {
+			points := 0
+			// en caso de ser multiple selección se evalua la respuesta
+			for _, correctAnswer := range answerUserDB.Question.CorrectAnswer.TextOpcions {
+				if utils.ContainsString(answerUserDB.Answer.TextToComplete, correctAnswer) {
+					points++
+					break
+				}
+			}
+
+			answerUserDB.IsCorrect = points == len(answerUserDB.Question.CorrectAnswer.TextOpcions)
+			// se calcula el puntaje
+			pointsForEachCorrectAnswer := 10 / len(answerUserDB.Question.CorrectAnswer.TextOpcions)
+			answerUserDB.Score = pointsForEachCorrectAnswer * points
+
+		}
+		answerUserDB.Score = 10
+		answerUserDB.Feedback = "Respuesta correcta"
+	case "complete_word":
+
+		textToCompleteCorrect := []string(answerUserDB.Question.CorrectAnswer.TextToComplete)
+
+		points := 0
+
+		for _, correctAnswer := range textToCompleteCorrect {
+			if utils.ContainsString(answerUserDB.Answer.TextToComplete, correctAnswer) {
+				points++
+				break
+			}
+		}
+
+		// Calculamos el puntaje para complete word
+		answerUserDB.IsCorrect = points == len(textToCompleteCorrect)
+		pointsForEachCorrectAnswer := 10 / len(textToCompleteCorrect)
+		answerUserDB.Score = pointsForEachCorrectAnswer * points
+		answerUserDB.Feedback = "Respuesta correcta"
+
+	case "order_word":
+		// analizamos que la respuesta del usuario sea igual que las opciones correctas
+		textToCompleteCorrect := []string(answerUserDB.Question.CorrectAnswer.TextOpcions)
+		textToCompleteUser := []string(answerUserDB.Answer.TextOpcions)
+
+		// si el orden esta correcto automaticamente es correcta, en caso de que
+		// una no sea correcta automaticamente es incorrecta.
+		for i, correctAnswer := range textToCompleteCorrect {
+			if i >= len(textToCompleteUser) {
+				answerUserDB.IsCorrect = false
+				answerUserDB.Score = 0
+				answerUserDB.Feedback = "Respuesta incorrecta"
+				break
+			}
+			if correctAnswer == textToCompleteUser[i] {
+				answerUserDB.IsCorrect = true
+				answerUserDB.Score = 10
+				answerUserDB.Feedback = "Respuesta correcta"
+				continue
+			} else {
+				answerUserDB.IsCorrect = false
+				answerUserDB.Score = 0
+				answerUserDB.Feedback = "Respuesta incorrecta"
+				break
+			}
+		}
+
+	}
+
+	// Actualizar cambios en la base de datos.
+	err = answerUserDB.UpdateAnswerUser()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": "error",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"score":      answerUserDB.Score,
+		"is_correct": answerUserDB.IsCorrect,
+		"feedback":   answerUserDB.Feedback,
+	})
+}
+
+func (h *ModuleHandler) FinishTest(c *fiber.Ctx) error {
+	// claims := utils.GetClaims(c)
+	testid, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "testid not found",
+			"error":   err.Error(),
+		})
+	}
+
+	// Finalizar el test en la base de datos.
+	finishTest, err := data.FinishTest(uint(testid))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": "error",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(finishTest)
+}
