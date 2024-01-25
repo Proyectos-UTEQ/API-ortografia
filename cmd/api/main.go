@@ -5,7 +5,6 @@ import (
 	"Proyectos-UTEQ/api-ortografia/internal/db"
 	"Proyectos-UTEQ/api-ortografia/internal/handlers"
 	"Proyectos-UTEQ/api-ortografia/internal/services"
-	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"fmt"
 	"log"
 
@@ -86,41 +85,15 @@ func main() {
 	// Routes for auth users
 	auth.Post("/sign-in", userHandler.HandlerSignin)
 	auth.Post("/sign-up", userHandler.HandlerSignup)
-
-	// se encarga de enviar el correo electronico al usuario
-	auth.Post("/reset-password", userHandler.HandlerResetPassword)
-
-	// se encarga de actulizar la constraseña del usuario
-	// esto debe resivir un token.
+	auth.Post("/reset-password", userHandler.HandlerResetPassword) // se encarga de enviar el correo electronico al usuario
 	auth.Put("/change-password", userHandler.HandlerChangePassword)
 
-	// Ejemplo de rutas protegidas.
-	api.Get("/protegida", jwtHandler.JWTMiddleware, handlers.Authorization("admin", "teacher"), func(c *fiber.Ctx) error {
-		claims := utils.GetClaims(c)
-		return c.SendString("ruta protegida, has tenido acceso " + claims.UserAPI.FirstName)
-	})
-
 	module := api.Group("/module", jwtHandler.JWTMiddleware) // solo con JWT se tiene acceso.
-
-	// Actuliza el modulo
-	module.Put(
-		"/:id",
-		handlers.Authorization("teacher", "admin"),
-		moduleHandler.UpdateModule,
-	)
-
+	module.Put("/:id", handlers.Authorization("teacher", "admin"), moduleHandler.UpdateModule)
 	// Lista todos los modulos.
-	module.Get(
-		"/teacher",
-		handlers.Authorization("teacher", "admin"),
-		moduleHandler.GetModulesForTeacher,
-	)
-
+	module.Get("/teacher", handlers.Authorization("teacher", "admin"), moduleHandler.GetModulesForTeacher)
 	// Lista todos los modulos.
-	module.Get(
-		"/",
-		moduleHandler.GetModules,
-	)
+	module.Get("/", moduleHandler.GetModules)
 
 	// Recupera todos los modulos y ademas indica si el usuario esta suscrito o no.
 	module.Get("/with-is-subscribed", moduleHandler.GetModuleWithIsSubscribed)
@@ -133,36 +106,34 @@ func main() {
 
 	// Routes for modules
 	// Crea un modulo.
-	module.Post(
-		"/",
-		handlers.Authorization("teacher", "admin"),
-		moduleHandler.CreateModuleForTeacher)
+	module.Post("/", handlers.Authorization("teacher", "admin"), moduleHandler.CreateModuleForTeacher)
+	module.Get("/:id", moduleHandler.GetModuleByID) // Recupera un modulo por el ID
 
-	module.Get("/:id", moduleHandler.GetModuleByID)
-
+	// Rutas para los test de los modulos.
 	module.Post("/:id/test", handlers.Authorization("student"), moduleHandler.GenerateTest)
 	module.Get("/:id/test/my-tests", handlers.Authorization("student"), moduleHandler.GetMyTest)
 	module.Get("/test/:id", handlers.Authorization("student"), moduleHandler.GetTest)
-	// Validación de pregunta
 	module.Put("/validate-answer/:answer_user_id", handlers.Authorization("student"), moduleHandler.ValidationAnswerForTestModule)
 	module.Put("/test/:id/finish", handlers.Authorization("student"), moduleHandler.FinishTest)
 
 	// Routes for questions
 	questionHandler := handlers.NewQuestionHandler(config)
-	modulequestionGroup := module.Group("/:id/question")
-	modulequestionGroup.Post("/", questionHandler.RegisterQuestionForModule)
-	modulequestionGroup.Get("/", questionHandler.GetQuestionsForModule)
-	modulequestionGroup.Delete("/:idquestion", questionHandler.DeleteQuestion)
-	modulequestionGroup.Put("/:idquestion", questionHandler.UpdateQuestion)
+	moduleQuestionGroup := module.Group("/:id/question")
+	moduleQuestionGroup.Post("/", questionHandler.RegisterQuestionForModule)
+	moduleQuestionGroup.Get("/", questionHandler.GetQuestionsForModule)
+	moduleQuestionGroup.Delete("/:idquestion", questionHandler.DeleteQuestion)
+	moduleQuestionGroup.Put("/:idquestion", questionHandler.UpdateQuestion)
 
 	// Routes for upload
 	upload := api.Group("/uploads")
 	uploadHandler := handlers.NewUploadHandler(config)
 
+	// Routes for GPT AI.
 	gptHandlers := handlers.NewGPTHandler(config)
 	gptGroup := api.Group("/gpt", jwtHandler.JWTMiddleware, handlers.Authorization("admin", "teacher"))
 	gptGroup.Get("/generate-question", gptHandlers.GenerateQuestion)
 
+	// Routes for upload files.
 	upload.Post("/", jwtHandler.JWTMiddleware, uploadHandler.UploadFiles)
 	upload.Static("/", "./uploads")
 
