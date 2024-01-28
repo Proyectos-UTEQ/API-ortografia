@@ -4,6 +4,7 @@ import (
 	"Proyectos-UTEQ/api-ortografia/internal/data"
 	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -452,36 +453,62 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 	switch answerUserDB.Question.TypeQuestion {
 	case "true_or_false":
 		answerUserDB.IsCorrect = answerUserDB.Question.CorrectAnswer.TrueOrFalse == answerUserDB.Answer.TrueOrFalse
-		answerUserDB.Score = 10
-		answerUserDB.Feedback = "Respuesta correcta"
+		if answerUserDB.IsCorrect {
+			answerUserDB.Score = 10
+			answerUserDB.Feedback = "Respuesta correcta"
+		} else {
+			answerUserDB.Score = 0
+			answerUserDB.Feedback = "Respuesta incorrecta"
+		}
 	case "multi_choice_text":
+		// cuanso es multi_chose_text la respuesat viene por TextOpciones.
 		if answerUserDB.Question.Options.SelectMode == "single" {
 			// si no tiene ninguna opcion selecionada automaticamente es incorrecta
-			if len(answerUserDB.Answer.TextToComplete) < 1 {
+			if len(answerUserDB.Answer.TextOpcions) < 1 {
 				answerUserDB.IsCorrect = false
 				answerUserDB.Score = 0
+				answerUserDB.Feedback = "Respuesta incorrecta"
 			} else {
-				answerUserDB.IsCorrect = utils.ContainsString(answerUserDB.Question.CorrectAnswer.TextOpcions, answerUserDB.Answer.TextToComplete[0])
-				answerUserDB.Score = 10
+				answerUserDB.IsCorrect = utils.ContainsString(answerUserDB.Question.CorrectAnswer.TextOpcions, answerUserDB.Answer.TextOpcions[0])
+				if answerUserDB.IsCorrect {
+					answerUserDB.Feedback = "Respuesta correcta"
+					answerUserDB.Score = 10
+				} else {
+					answerUserDB.Feedback = "Respuesta incorrecta"
+					answerUserDB.Score = 0
+				}
 			}
 		} else {
+			// en caso de ser multiple
+
 			points := 0
 			// en caso de ser multiple selección se evalua la respuesta
 			for _, correctAnswer := range answerUserDB.Question.CorrectAnswer.TextOpcions {
-				if utils.ContainsString(answerUserDB.Answer.TextToComplete, correctAnswer) {
+				if utils.ContainsString(answerUserDB.Answer.TextOpcions, correctAnswer) {
 					points++
-					break
 				}
 			}
 
 			answerUserDB.IsCorrect = points == len(answerUserDB.Question.CorrectAnswer.TextOpcions)
 			// se calcula el puntaje
-			pointsForEachCorrectAnswer := 10 / len(answerUserDB.Question.CorrectAnswer.TextOpcions)
-			answerUserDB.Score = pointsForEachCorrectAnswer * points
+			pointsForEachCorrectAnswer := 10 / float32(len(answerUserDB.Question.CorrectAnswer.TextOpcions))
+			answerUserDB.Score = pointsForEachCorrectAnswer * float32(points)
 
+			if points == 0 {
+				answerUserDB.Feedback = "Respuesta incorrecta"
+			} else if points < len(answerUserDB.Question.CorrectAnswer.TextOpcions) {
+				count := len(answerUserDB.Question.CorrectAnswer.TextOpcions) - points
+				answerUserDB.Feedback = fmt.Sprintf("Te faltó seleccionar %d", count)
+			} else {
+				answerUserDB.Feedback = "Respuesta correcta"
+			}
+			//if answerUserDB.IsCorrect {
+			//	answerUserDB.Feedback = "Respuesta correcta"
+			//} else {
+			//	answerUserDB.Feedback = "Respuesta incorrecta"
+			//}
 		}
-		answerUserDB.Score = 10
-		answerUserDB.Feedback = "Respuesta correcta"
+
 	case "complete_word":
 
 		textToCompleteCorrect := []string(answerUserDB.Question.CorrectAnswer.TextToComplete)
@@ -498,7 +525,7 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 		// Calculamos el puntaje para complete word
 		answerUserDB.IsCorrect = points == len(textToCompleteCorrect)
 		pointsForEachCorrectAnswer := 10 / len(textToCompleteCorrect)
-		answerUserDB.Score = pointsForEachCorrectAnswer * points
+		answerUserDB.Score = float32(pointsForEachCorrectAnswer * points)
 		answerUserDB.Feedback = "Respuesta correcta"
 
 	case "order_word":
@@ -528,6 +555,10 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 			}
 		}
 
+	default:
+		answerUserDB.IsCorrect = false
+		answerUserDB.Score = 0
+		answerUserDB.Feedback = ""
 	}
 
 	// Actualizar cambios en la base de datos.

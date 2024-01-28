@@ -28,7 +28,7 @@ type AnswerUser struct {
 	AnswerID     uint      `json:"answer_id"`
 	Answer       *Answer   `json:"answer"` // Objeto donde realmente esta la respuesta del usuario
 	Responded    bool      `json:"responded"`
-	Score        int       `json:"score"`
+	Score        float32   `json:"score"`
 	IsCorrect    bool      `json:"is_correct"`
 	Feedback     string    `json:"feedback"`
 	ChatIssueID  *uint     `json:"chat_issue_id"`

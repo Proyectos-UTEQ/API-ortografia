@@ -16,7 +16,7 @@ type AnswerUser struct {
 	AnswerID     uint
 	Answer       Answer // Respuesta del usuario
 	Responded    bool   // Indica si el usuario respondio la pregunta
-	Score        int
+	Score        float32
 	IsCorrect    bool
 	Feedback     string
 	ChatIssueID  *uint

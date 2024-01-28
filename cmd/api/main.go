@@ -138,5 +138,8 @@ func main() {
 	upload.Static("/", "./uploads")
 
 	go services.TelegramBot(config)
-	app.Listen(":" + config.GetString("APP_PORT"))
+	err = app.Listen(":" + config.GetString("APP_PORT"))
+	if err != nil {
+		log.Println(err)
+	}
 }
