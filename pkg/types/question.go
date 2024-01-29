@@ -47,7 +47,7 @@ func (q *Question) Validate() error {
 		// validar que la respuesta este dentro de las opciones.
 		ok := false
 		for _, option := range q.Options.TextOptions {
-			if option == q.CorrectAnswer.TextOpcions[0] {
+			if option == q.CorrectAnswer.TextOptions[0] {
 				ok = true
 				break
 			}
@@ -72,7 +72,7 @@ func (q *Question) Validate() error {
 			return fmt.Errorf("the text to complete cannot be empty")
 		}
 
-		if len(q.CorrectAnswer.TextOpcions) == 0 {
+		if len(q.CorrectAnswer.TextOptions) == 0 {
 			return fmt.Errorf("the correct answer cannot be empty")
 		}
 	}
@@ -90,6 +90,6 @@ type Options struct {
 type Answer struct {
 	ID             uint     `json:"id"`
 	TrueOrFalse    bool     `json:"true_or_false"`
-	TextOpcions    []string `json:"text_opcions"`
+	TextOptions    []string `json:"text_options"`
 	TextToComplete []string `json:"text_to_complete"`
 }

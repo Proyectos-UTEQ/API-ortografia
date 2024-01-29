@@ -24,13 +24,13 @@ type Question struct {
 
 type TypeQuestion string
 
-const (
-	TrueFalse       TypeQuestion = "true_false"
-	MultiChoiceText TypeQuestion = "multi_choice_text"
-	MultiChoiceABC  TypeQuestion = "multi_choice_abc"
-	CompleteWord    TypeQuestion = "complete_word"
-	OrderWord       TypeQuestion = "order_word"
-)
+//const (
+//	TrueFalse       TypeQuestion = "true_false"
+//	MultiChoiceText TypeQuestion = "multi_choice_text"
+//	MultiChoiceABC  TypeQuestion = "multi_choice_abc"
+//	CompleteWord    TypeQuestion = "complete_word"
+//	OrderWord       TypeQuestion = "order_word"
+//)
 
 func QuestionToAPI(question Question) types.Question {
 	return types.Question{
@@ -71,7 +71,7 @@ func RegisterQuestionForModule(questionAPI types.Question) (types.Question, erro
 		},
 		CorrectAnswer: Answer{
 			TrueOrFalse:    questionAPI.CorrectAnswer.TrueOrFalse,
-			TextOpcions:    pq.StringArray(questionAPI.CorrectAnswer.TextOpcions),
+			TextOptions:    pq.StringArray(questionAPI.CorrectAnswer.TextOptions),
 			TextToComplete: pq.StringArray(questionAPI.CorrectAnswer.TextToComplete),
 		},
 	}
@@ -85,10 +85,10 @@ func RegisterQuestionForModule(questionAPI types.Question) (types.Question, erro
 	return QuestionToAPI(question), nil
 }
 
-// Recupearmos todas las preguntas que pertenezcan al modulo
+// GetQuestionsForModule Recuperamos todas las preguntas que pertenezcan al modulo
 func GetQuestionsForModule(moduleID uint) ([]types.Question, error) {
 
-	questions := []Question{}
+	var questions = make([]Question, 0)
 	result := db.DB.Where("module_id = ?", moduleID).Preload("CorrectAnswer").Order("created_at").Find(&questions)
 	if result.Error != nil {
 		return nil, result.Error
@@ -124,7 +124,7 @@ func UpdateQuestion(question types.Question) error {
 		CorrectAnswer: Answer{
 			Model:          gorm.Model{ID: *question.CorrectAnswerID},
 			TrueOrFalse:    question.CorrectAnswer.TrueOrFalse,
-			TextOpcions:    pq.StringArray(question.CorrectAnswer.TextOpcions),
+			TextOptions:    pq.StringArray(question.CorrectAnswer.TextOptions),
 			TextToComplete: pq.StringArray(question.CorrectAnswer.TextToComplete),
 		},
 	}

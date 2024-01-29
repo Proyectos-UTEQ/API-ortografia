@@ -10,7 +10,7 @@ import (
 type Answer struct {
 	gorm.Model
 	TrueOrFalse    bool
-	TextOpcions    pq.StringArray `gorm:"type:varchar(200)[]"`
+	TextOptions    pq.StringArray `gorm:"type:varchar(200)[]"`
 	TextToComplete pq.StringArray `gorm:"type:varchar(200)[]"`
 }
 
@@ -21,7 +21,7 @@ func AnswerToAPI(answer *Answer) *types.Answer {
 		return &types.Answer{
 			ID:             answer.ID,
 			TrueOrFalse:    answer.TrueOrFalse,
-			TextOpcions:    answer.TextOpcions,
+			TextOptions:    answer.TextOptions,
 			TextToComplete: answer.TextToComplete,
 		}
 	}

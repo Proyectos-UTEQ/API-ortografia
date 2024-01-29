@@ -77,7 +77,7 @@ func GenerateTestForStudent(userid uint, moduleID uint) (testId uint, err error)
 			QuestionID:   questions[i].ID,
 			Answer: Answer{
 				TrueOrFalse:    false,
-				TextOpcions:    []string{""},
+				TextOptions:    []string{""},
 				TextToComplete: []string{""},
 			},
 			Score:       0,

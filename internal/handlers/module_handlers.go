@@ -16,7 +16,7 @@ type ModuleHandler struct {
 	config *viper.Viper
 }
 
-// NewModuleHandler crea un nuevo handler de modulos.
+// NewModuleHandler crea un nuevo handler de modules.
 func NewModuleHandler(config *viper.Viper) *ModuleHandler {
 	return &ModuleHandler{
 		config: config,
@@ -42,7 +42,7 @@ func (h *ModuleHandler) CreateModuleForTeacher(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Error en la validacion de datos",
+			"message": "Error en la validación de datos",
 			"data":    resp,
 		})
 	}
@@ -58,7 +58,7 @@ func (h *ModuleHandler) CreateModuleForTeacher(c *fiber.Ctx) error {
 		})
 	}
 
-	// Generamos la url de la imagen del modulo.
+	// Generamos la url de la imagen del módulo.
 	moduleResponse.ImgBackURL = h.config.GetString("APP_HOST") + moduleResponse.ImgBackURL
 
 	return c.Status(fiber.StatusCreated).JSON(moduleResponse)
@@ -99,7 +99,7 @@ func (h *ModuleHandler) UpdateModule(c *fiber.Ctx) error {
 		})
 	}
 
-	// seteamos el id del modulo.
+	// establecemos el ID del módulo
 	module.ID = uint(id)
 
 	// Validar datos.
@@ -107,12 +107,12 @@ func (h *ModuleHandler) UpdateModule(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Error en la validacion de datos",
+			"message": "Error en la validación de datos",
 			"data":    resp,
 		})
 	}
 
-	// Actualizamos el modulo en la db
+	// Actualizamos el módulo en la db
 	moduleData, err := data.UpdateModule(&module)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -127,7 +127,7 @@ func (h *ModuleHandler) UpdateModule(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(moduleResponse)
 }
 
-// listar los modulos
+// GetModulesForTeacher obtiene todos los modules para un teacher
 func (h *ModuleHandler) GetModulesForTeacher(c *fiber.Ctx) error {
 
 	claims := utils.GetClaims(c)
@@ -146,7 +146,7 @@ func (h *ModuleHandler) GetModulesForTeacher(c *fiber.Ctx) error {
 	// validamos
 	_ = paginated.Validate()
 
-	// obtenemos los modulos
+	// obtenemos los modules
 	modules, details, err := data.GetModulesForTeacher(&paginated, claims.UserAPI.ID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -179,7 +179,7 @@ func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
 	// validamos
 	_ = paginated.Validate()
 
-	// obtenemos los modulos
+	// obtenemos los modules
 	modules, details, err := data.GetModule(&paginated)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -214,7 +214,7 @@ func (h *ModuleHandler) GetModuleWithIsSubscribed(c *fiber.Ctx) error {
 	// validamos
 	_ = paginated.Validate()
 
-	// obtenemos los modulos
+	// obtenemos los modules
 	modules, details, err := data.GetModuleWithUserSubscription(&paginated, claims.UserAPI.ID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -233,7 +233,7 @@ func (h *ModuleHandler) GetModuleWithIsSubscribed(c *fiber.Ctx) error {
 
 }
 
-// un usuario se podra suscribir a un modulo
+// Subscribe un usuario se podrá suscribir a un modulo
 func (h *ModuleHandler) Subscribe(c *fiber.Ctx) error {
 
 	claims := utils.GetClaims(c)
@@ -257,7 +257,7 @@ func (h *ModuleHandler) Subscribe(c *fiber.Ctx) error {
 		})
 	}
 
-	// creamos la suscripcion
+	// creamos la subscription
 	_, err = data.RegisterSubscription(claims.UserAPI.ID, req.Code)
 
 	if err != nil {
@@ -292,7 +292,7 @@ func (h *ModuleHandler) Subscriptions(c *fiber.Ctx) error {
 
 	claims := utils.GetClaims(c)
 
-	// obtenemos los modulos
+	// obtenemos los modules
 	modules, details, err := data.GetModuleForStudent(&paginated, claims.UserAPI.ID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -322,7 +322,7 @@ func (h *ModuleHandler) GetStudents(c *fiber.Ctx) error {
 		})
 	}
 
-	// Obtener los estudiantes del modulo
+	// Obtener los estudiantes del módulo
 	students, err := data.GetStudentsByModule(uint(id))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -363,12 +363,6 @@ func (h *ModuleHandler) GetModuleByID(c *fiber.Ctx) error {
 
 func (h *ModuleHandler) GenerateTest(c *fiber.Ctx) error {
 
-	// se debe crear un test en la base de datos.
-	// cada test debe tener un total de 10 preguntas.
-	// se debe recupear el modulo por el id
-	// se debe generar las 10 preguntas para realizar el test.
-	// si el usuario no completa las 10 preguntas perdera todo el progreso.
-
 	claims := utils.GetClaims(c)
 
 	idModule, err := c.ParamsInt("id")
@@ -379,7 +373,7 @@ func (h *ModuleHandler) GenerateTest(c *fiber.Ctx) error {
 		})
 	}
 
-	testid, err := data.GenerateTestForStudent(claims.UserAPI.ID, uint(idModule))
+	testId, err := data.GenerateTestForStudent(claims.UserAPI.ID, uint(idModule))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -388,7 +382,7 @@ func (h *ModuleHandler) GenerateTest(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"testid": testid,
+		"testId": testId,
 	})
 }
 
@@ -415,7 +409,7 @@ func (h *ModuleHandler) GetTest(c *fiber.Ctx) error {
 }
 
 func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
-	idquestion, err := c.ParamsInt("answer_user_id")
+	idQuestion, err := c.ParamsInt("answer_user_id")
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": "error",
@@ -431,9 +425,9 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 		})
 	}
 
-	// Evalular la respuesta del estudiante.
+	// Evaluar la respuesta del estudiante.
 	// Recuperar la answer_user que esta en la base de datos.
-	answerUserDB, err := data.GetAnswerUserByID(uint(idquestion))
+	answerUserDB, err := data.GetAnswerUserByID(uint(idQuestion))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": "error",
@@ -442,11 +436,9 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 	}
 
 	// establecemos la nueva respuesta del estudiante.
-	answerUserDB.Answer = data.Answer{
-		TrueOrFalse:    answer.TrueOrFalse,
-		TextOpcions:    answer.TextOpcions,
-		TextToComplete: answer.TextToComplete,
-	}
+	answerUserDB.Answer.TrueOrFalse = answer.TrueOrFalse
+	answerUserDB.Answer.TextOptions = answer.TextOptions
+	answerUserDB.Answer.TextToComplete = answer.TextToComplete
 
 	// Evaluación de la pregunta.
 	answerUserDB.Responded = true
@@ -461,15 +453,15 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 			answerUserDB.Feedback = "Respuesta incorrecta"
 		}
 	case "multi_choice_text":
-		// cuanso es multi_chose_text la respuesat viene por TextOpciones.
+		// caso es multi_chose_text la respuesta viene por TextOpciones.
 		if answerUserDB.Question.Options.SelectMode == "single" {
-			// si no tiene ninguna opcion selecionada automaticamente es incorrecta
-			if len(answerUserDB.Answer.TextOpcions) < 1 {
+			// si no tiene ninguna opción selection automáticamente es incorrecta
+			if len(answerUserDB.Answer.TextOptions) < 1 {
 				answerUserDB.IsCorrect = false
 				answerUserDB.Score = 0
 				answerUserDB.Feedback = "Respuesta incorrecta"
 			} else {
-				answerUserDB.IsCorrect = utils.ContainsString(answerUserDB.Question.CorrectAnswer.TextOpcions, answerUserDB.Answer.TextOpcions[0])
+				answerUserDB.IsCorrect = utils.ContainsString(answerUserDB.Question.CorrectAnswer.TextOptions, answerUserDB.Answer.TextOptions[0])
 				if answerUserDB.IsCorrect {
 					answerUserDB.Feedback = "Respuesta correcta"
 					answerUserDB.Score = 10
@@ -482,22 +474,22 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 			// en caso de ser multiple
 
 			points := 0
-			// en caso de ser multiple selección se evalua la respuesta
-			for _, correctAnswer := range answerUserDB.Question.CorrectAnswer.TextOpcions {
-				if utils.ContainsString(answerUserDB.Answer.TextOpcions, correctAnswer) {
+			// en caso de ser multiple selección se evalúa la respuesta
+			for _, correctAnswer := range answerUserDB.Question.CorrectAnswer.TextOptions {
+				if utils.ContainsString(answerUserDB.Answer.TextOptions, correctAnswer) {
 					points++
 				}
 			}
 
-			answerUserDB.IsCorrect = points == len(answerUserDB.Question.CorrectAnswer.TextOpcions)
+			answerUserDB.IsCorrect = points == len(answerUserDB.Question.CorrectAnswer.TextOptions)
 			// se calcula el puntaje
-			pointsForEachCorrectAnswer := 10 / float32(len(answerUserDB.Question.CorrectAnswer.TextOpcions))
+			pointsForEachCorrectAnswer := 10 / float32(len(answerUserDB.Question.CorrectAnswer.TextOptions))
 			answerUserDB.Score = pointsForEachCorrectAnswer * float32(points)
 
 			if points == 0 {
 				answerUserDB.Feedback = "Respuesta incorrecta"
-			} else if points < len(answerUserDB.Question.CorrectAnswer.TextOpcions) {
-				count := len(answerUserDB.Question.CorrectAnswer.TextOpcions) - points
+			} else if points < len(answerUserDB.Question.CorrectAnswer.TextOptions) {
+				count := len(answerUserDB.Question.CorrectAnswer.TextOptions) - points
 				answerUserDB.Feedback = fmt.Sprintf("Te faltó seleccionar %d", count)
 			} else {
 				answerUserDB.Feedback = "Respuesta correcta"
@@ -522,7 +514,7 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 			}
 		}
 
-		// Calculamos el puntaje para complete word
+		// Calculamos el puntaje
 		answerUserDB.IsCorrect = points == len(textToCompleteCorrect)
 		pointsForEachCorrectAnswer := 10 / len(textToCompleteCorrect)
 		answerUserDB.Score = float32(pointsForEachCorrectAnswer * points)
@@ -530,11 +522,11 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 
 	case "order_word":
 		// analizamos que la respuesta del usuario sea igual que las opciones correctas
-		textToCompleteCorrect := []string(answerUserDB.Question.CorrectAnswer.TextOpcions)
-		textToCompleteUser := []string(answerUserDB.Answer.TextOpcions)
+		textToCompleteCorrect := []string(answerUserDB.Question.CorrectAnswer.TextOptions)
+		textToCompleteUser := []string(answerUserDB.Answer.TextOptions)
 
-		// si el orden esta correcto automaticamente es correcta, en caso de que
-		// una no sea correcta automaticamente es incorrecta.
+		// si el orden está correcto automáticamente es correcta, en caso de que
+		// una no sea correcta automáticamente es incorrecta.
 		for i, correctAnswer := range textToCompleteCorrect {
 			if i >= len(textToCompleteUser) {
 				answerUserDB.IsCorrect = false
@@ -570,26 +562,25 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"score":      answerUserDB.Score,
-		"is_correct": answerUserDB.IsCorrect,
-		"feedback":   answerUserDB.Feedback,
-	})
+	// retornamos la respuesta del usuario
+	answerUserResponse := data.AnswerUserToAPI(answerUserDB)
+
+	return c.Status(fiber.StatusOK).JSON(answerUserResponse)
 }
 
 func (h *ModuleHandler) FinishTest(c *fiber.Ctx) error {
 	// claims := utils.GetClaims(c)
-	testid, err := c.ParamsInt("id")
+	testId, err := c.ParamsInt("id")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"message": "testid not found",
+			"message": "testId not found",
 			"error":   err.Error(),
 		})
 	}
 
 	// Finalizar el test en la base de datos.
-	finishTest, err := data.FinishTest(uint(testid))
+	finishTest, err := data.FinishTest(uint(testId))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": "error",
@@ -600,7 +591,7 @@ func (h *ModuleHandler) FinishTest(c *fiber.Ctx) error {
 	return c.JSON(finishTest)
 }
 
-// GetMyTest recupera todos los test de un usuario en un modulo especifico.
+// GetMyTest recupera todos los test de un usuario en un módulo específico.
 func (h *ModuleHandler) GetMyTest(c *fiber.Ctx) error {
 	claims := utils.GetClaims(c)
 	idModule, err := c.ParamsInt("id")

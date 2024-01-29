@@ -20,7 +20,6 @@ type TestModuleQuestionAnswer struct {
 }
 
 type AnswerUser struct {
-	// TODO: completar
 	AnswerUserID uint      `json:"answer_user_id"`
 	TestModuleID uint      `json:"test_module_id"`
 	QuestionID   uint      `json:"question_id,omitempty"`

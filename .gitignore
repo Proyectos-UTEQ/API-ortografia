@@ -2,7 +2,4 @@ bin/*
 config.env
 config.prod.env
 uploads/
-/.idea/.gitignore
-/.idea/api-ortografia.iml
-/.idea/modules.xml
-/.idea/vcs.xml
+/.idea/

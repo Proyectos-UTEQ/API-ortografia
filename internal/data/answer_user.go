@@ -3,7 +3,6 @@ package data
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/db"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
-
 	"gorm.io/gorm"
 )
 
@@ -55,7 +54,7 @@ func (a *AnswerUser) UpdateAnswerUser() error {
 	}
 
 	// actualizamos la tabla answer
-	result = tx.Model(&Answer{}).Select("true_or_false", "text_opcions", "text_to_complete").Where("id = ?", a.AnswerID).Updates(a.Answer)
+	result = tx.Model(&Answer{}).Select("true_or_false", "text_options", "text_to_complete").Where("id = ?", a.AnswerID).Updates(a.Answer)
 	if result.Error != nil {
 		tx.Rollback()
 		return result.Error
