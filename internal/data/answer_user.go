@@ -39,7 +39,7 @@ func AnswerUserToAPI(a AnswerUser) types.AnswerUser {
 
 func GetAnswerUserByID(id uint) (AnswerUser, error) {
 	var answerUser AnswerUser
-	result := db.DB.Preload("Question.CorrectAnswer").First(&answerUser, id)
+	result := db.DB.Preload("Question.CorrectAnswer").Preload("Answer").First(&answerUser, id)
 	return answerUser, result.Error
 }
 
