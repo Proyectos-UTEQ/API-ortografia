@@ -46,6 +46,14 @@ func ClassToAPI(c Class) types.Class {
 	}
 }
 
+func ClassesToAPI(classes []Class) []types.Class {
+	var classesAPI []types.Class
+	for _, c := range classes {
+		classesAPI = append(classesAPI, ClassToAPI(c))
+	}
+	return classesAPI
+}
+
 func RegisterClass(classAPI types.Class) (id uint, err error) {
 	class := Class{
 		CreateByID:     classAPI.CreatedByID,
@@ -75,4 +83,13 @@ func GetClassByID(id uint) (Class, error) {
 		return class, result.Error
 	}
 	return class, nil
+}
+
+func GetClassesByTeacherID(teacherID uint) ([]Class, error) {
+	var classes []Class
+	result := db.DB.Preload("CreateBy").Preload("Teacher").Preload("Course").Where("teacher_id = ?", teacherID).Find(&classes)
+	if result.Error != nil {
+		return classes, result.Error
+	}
+	return classes, nil
 }

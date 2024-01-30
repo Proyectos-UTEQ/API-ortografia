@@ -71,3 +71,20 @@ func (h *ClassesHandler) NewClasses(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(classAPI)
 }
+
+func (h *ClassesHandler) GetClassesByTeacher(c *fiber.Ctx) error {
+	// traer todas las clases basándonos en el profesor que las solicita.
+	//claims := utils.GetClaims(c)
+
+	idTeacher, err := c.ParamsInt("id")
+
+	classes, err := data.GetClassesByTeacherID(uint(idTeacher))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	classesAPI := data.ClassesToAPI(classes)
+	return c.Status(fiber.StatusOK).JSON(classesAPI)
+}
