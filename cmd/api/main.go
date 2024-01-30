@@ -137,6 +137,10 @@ func main() {
 	upload.Post("/", jwtHandler.JWTMiddleware, uploadHandler.UploadFiles)
 	upload.Static("/", "./uploads")
 
+	classesHandler := handlers.NewClassesHandler(config)
+	classesGroup := api.Group("/classes", jwtHandler.JWTMiddleware)
+	classesGroup.Post("/", handlers.Authorization("teacher", "admin"), classesHandler.NewClasses)
+
 	go services.TelegramBot(config)
 	err = app.Listen(":" + config.GetString("APP_PORT"))
 	if err != nil {
