@@ -16,7 +16,7 @@ type Class struct {
 	AcademicPeriod string   `json:"academic_period" validate:"required"`
 	Description    string   `json:"description" validate:"required"`
 	ImgBackURL     string   `json:"img_back_url"`
-	IsPublic       bool     `json:"is_public" validate:"required"`
+	Archived       bool     `json:"archived" validate:"required"`
 }
 
 func (c *Class) ValidateNewClass() error {

@@ -20,7 +20,7 @@ type Class struct {
 	AcademicPeriod string
 	Description    string
 	ImgBackURL     string
-	IsPublic       bool
+	Archived       bool
 }
 
 func (Class) TableName() string {
@@ -42,7 +42,7 @@ func ClassToAPI(c Class) types.Class {
 		AcademicPeriod: c.AcademicPeriod,
 		Description:    c.Description,
 		ImgBackURL:     c.ImgBackURL,
-		IsPublic:       c.IsPublic,
+		Archived:       c.Archived,
 	}
 }
 
@@ -57,7 +57,7 @@ func RegisterClass(classAPI types.Class) (id uint, err error) {
 		AcademicPeriod: classAPI.AcademicPeriod,
 		Description:    classAPI.Description,
 		ImgBackURL:     classAPI.ImgBackURL,
-		IsPublic:       classAPI.IsPublic,
+		Archived:       classAPI.Archived,
 	}
 	result := db.DB.Create(&class)
 	if result.Error != nil {
