@@ -78,7 +78,7 @@ func UpdateClassByID(classAPI types.Class) error {
 	// Actualizamos la clase.
 	var class Class
 	class.ID = classAPI.ID
-	result := db.DB.Model(&class).Select("teacher_id", "name", "course_id", "paralelo", "academic_period", "description", "img_back_url", "archived").Updates(Class{
+	result := db.DB.Model(&class).Select("teacher_id", "name", "course", "paralelo", "academic_period", "description", "img_back_url", "archived").Updates(Class{
 		TeacherID:      classAPI.TeacherID,
 		Name:           classAPI.Name,
 		Course:         classAPI.Course,
@@ -107,7 +107,7 @@ func GetClassByID(id uint) (Class, error) {
 
 func GetClassesByTeacherID(teacherID uint) ([]Class, error) {
 	var classes []Class
-	result := db.DB.Preload("CreateBy").Preload("Teacher").Preload("Course").Where("teacher_id = ? and archived = false", teacherID).Find(&classes)
+	result := db.DB.Preload("CreateBy").Preload("Teacher").Where("teacher_id = ? and archived = false", teacherID).Find(&classes)
 	if result.Error != nil {
 		return classes, result.Error
 	}
@@ -116,7 +116,7 @@ func GetClassesByTeacherID(teacherID uint) ([]Class, error) {
 
 func GetClassesArchivedByTeacherID(teacherID uint) ([]Class, error) {
 	var classes []Class
-	result := db.DB.Preload("CreateBy").Preload("Teacher").Preload("Course").Where("teacher_id = ? and archived = true", teacherID).Find(&classes)
+	result := db.DB.Preload("CreateBy").Preload("Teacher").Where("teacher_id = ? and archived = true", teacherID).Find(&classes)
 	if result.Error != nil {
 		return classes, result.Error
 	}
