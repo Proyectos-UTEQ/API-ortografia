@@ -80,7 +80,7 @@ func UpdateClassByID(classAPI types.Class) error {
 	// Actualizamos la clase.
 	var class Class
 	class.ID = classAPI.ID
-	result := db.DB.Model(&class).Select("teacher_id", "name", "course_id", "paralelo", "academic_period", "description", "img_back_url").Updates(Class{
+	result := db.DB.Model(&class).Select("teacher_id", "name", "course_id", "paralelo", "academic_period", "description", "img_back_url", "archived").Updates(Class{
 		TeacherID:      classAPI.TeacherID,
 		Name:           classAPI.Name,
 		CourseID:       classAPI.CourseID,
