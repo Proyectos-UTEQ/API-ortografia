@@ -14,8 +14,7 @@ type Class struct {
 	Teacher        User
 	Code           string
 	Name           string
-	CourseID       uint
-	Course         Course
+	Course         string
 	Paralelo       string
 	AcademicPeriod string
 	Description    string
@@ -36,8 +35,7 @@ func ClassToAPI(c Class) types.Class {
 		Teacher:        UserToAPI(c.Teacher),
 		Code:           c.Code,
 		Name:           c.Name,
-		CourseID:       c.CourseID,
-		Course:         CourseToAPI(c.Course),
+		Course:         c.Course,
 		Paralelo:       c.Paralelo,
 		AcademicPeriod: c.AcademicPeriod,
 		Description:    c.Description,
@@ -60,7 +58,7 @@ func RegisterClass(classAPI types.Class) (id uint, err error) {
 		TeacherID:      classAPI.TeacherID,
 		Code:           classAPI.Code,
 		Name:           classAPI.Name,
-		CourseID:       classAPI.CourseID,
+		Course:         classAPI.Course,
 		Paralelo:       classAPI.Paralelo,
 		AcademicPeriod: classAPI.AcademicPeriod,
 		Description:    classAPI.Description,
@@ -83,7 +81,7 @@ func UpdateClassByID(classAPI types.Class) error {
 	result := db.DB.Model(&class).Select("teacher_id", "name", "course_id", "paralelo", "academic_period", "description", "img_back_url", "archived").Updates(Class{
 		TeacherID:      classAPI.TeacherID,
 		Name:           classAPI.Name,
-		CourseID:       classAPI.CourseID,
+		Course:         classAPI.Course,
 		Paralelo:       classAPI.Paralelo,
 		AcademicPeriod: classAPI.AcademicPeriod,
 		Description:    classAPI.Description,
@@ -100,7 +98,7 @@ func UpdateClassByID(classAPI types.Class) error {
 func GetClassByID(id uint) (Class, error) {
 	var class Class
 	class.ID = id
-	result := db.DB.Preload("CreateBy").Preload("Teacher").Preload("Course").First(&class)
+	result := db.DB.Preload("CreateBy").Preload("Teacher").First(&class)
 	if result.Error != nil {
 		return class, result.Error
 	}

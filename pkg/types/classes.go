@@ -10,8 +10,7 @@ type Class struct {
 	Teacher        *UserAPI `json:"teacher"`
 	Code           string   `json:"code"`
 	Name           string   `json:"name" validate:"required"`
-	CourseID       uint     `json:"course_id" validate:"required"`
-	Course         Course   `json:"course"`
+	Course         string   `json:"course" validate:"required"`
 	Paralelo       string   `json:"paralelo" validate:"required"`
 	AcademicPeriod string   `json:"academic_period" validate:"required"`
 	Description    string   `json:"description" validate:"required"`
@@ -26,10 +25,6 @@ func (c *Class) ValidateNewClass() error {
 
 	if c.Name == "" {
 		return fmt.Errorf("name is required")
-	}
-
-	if c.CourseID == 0 {
-		return fmt.Errorf("course_id is required")
 	}
 
 	if c.Paralelo == "" {

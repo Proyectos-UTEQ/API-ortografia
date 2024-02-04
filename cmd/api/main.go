@@ -81,6 +81,17 @@ func main() {
 
 	api := app.Group("/api")
 
+	api.Get("/prueba", func(c *fiber.Ctx) error {
+		gpt := services.NewGPT("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")
+		respuesta, err := gpt.GPTTest("Generame 10 preguntas sobre el tema de la universidad")
+		if err != nil {
+			log.Println(err)
+			return c.SendStatus(500)
+		}
+
+		return c.SendString(respuesta)
+	})
+
 	//student := api.Group("/students", jwtHandler.JWTMiddleware, handlers.Authorization("student"))
 
 	auth := api.Group("/auth")
