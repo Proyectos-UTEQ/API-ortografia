@@ -81,6 +81,8 @@ func main() {
 
 	api := app.Group("/api")
 
+	//student := api.Group("/students", jwtHandler.JWTMiddleware, handlers.Authorization("student"))
+
 	auth := api.Group("/auth")
 	// Routes for auth users
 	auth.Post("/sign-in", userHandler.HandlerSignin)
@@ -107,13 +109,14 @@ func main() {
 	// Routes for modules
 	// Crea un modulo.
 	module.Post("/", handlers.Authorization("teacher", "admin"), moduleHandler.CreateModuleForTeacher)
-	module.Get("/:id", moduleHandler.GetModuleByID) // Recupera un modulo por el ID
+	module.Get("/:id", moduleHandler.GetModuleByID) // Recupera un módulo por el ID
 
-	// Rutas para los test de los modulos.
-	module.Post("/:id/test", handlers.Authorization("student"), moduleHandler.GenerateTest)
-	module.Get("/:id/test/my-tests", handlers.Authorization("student"), moduleHandler.GetMyTest)
-	module.Get("/test/:id", handlers.Authorization("student"), moduleHandler.GetTest)
-	module.Put("/validate-answer/:answer_user_id", handlers.Authorization("student"), moduleHandler.ValidationAnswerForTestModule)
+	// Rutas para los test de los módulos.
+	testModule := module.Group("/:id/test", handlers.Authorization("student"))
+	testModule.Post("/", moduleHandler.GenerateTest)
+	testModule.Get("/my-tests", moduleHandler.GetMyTestsByModule)
+	module.Get("/test/:id", moduleHandler.GetTestByID)
+	module.Put("/test/validate-answer/:answer_user_id", handlers.Authorization("student"), moduleHandler.ValidationAnswerForTestModule)
 	module.Put("/test/:id/finish", handlers.Authorization("student"), moduleHandler.FinishTest)
 
 	// Routes for questions
@@ -140,7 +143,9 @@ func main() {
 	classesHandler := handlers.NewClassesHandler(config)
 	classesGroup := api.Group("/classes", jwtHandler.JWTMiddleware)
 	classesGroup.Post("/", handlers.Authorization("teacher", "admin"), classesHandler.NewClasses)
+	classesGroup.Put("/:id/archive", handlers.Authorization("teacher", "admin"), classesHandler.ArchiveClassByID)
 	api.Get("/professors/:id/classes", jwtHandler.JWTMiddleware, handlers.Authorization("teacher"), classesHandler.GetClassesByTeacher)
+	api.Get("/professors/:id/classes/archived", jwtHandler.JWTMiddleware, handlers.Authorization("teacher"), classesHandler.GetClassesArchivedByTeacher)
 
 	go services.TelegramBot(config)
 	err = app.Listen(":" + config.GetString("APP_PORT"))

@@ -87,9 +87,28 @@ func GetClassByID(id uint) (Class, error) {
 
 func GetClassesByTeacherID(teacherID uint) ([]Class, error) {
 	var classes []Class
-	result := db.DB.Preload("CreateBy").Preload("Teacher").Preload("Course").Where("teacher_id = ?", teacherID).Find(&classes)
+	result := db.DB.Preload("CreateBy").Preload("Teacher").Preload("Course").Where("teacher_id = ? and archived = false", teacherID).Find(&classes)
 	if result.Error != nil {
 		return classes, result.Error
 	}
 	return classes, nil
+}
+
+func GetClassesArchivedByTeacherID(teacherID uint) ([]Class, error) {
+	var classes []Class
+	result := db.DB.Preload("CreateBy").Preload("Teacher").Preload("Course").Where("teacher_id = ? and archived = true", teacherID).Find(&classes)
+	if result.Error != nil {
+		return classes, result.Error
+	}
+	return classes, nil
+}
+
+func ArchiveClass(id uint) error {
+	var class Class
+	class.ID = id
+	result := db.DB.Model(&class).Update("archived", true)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
 }

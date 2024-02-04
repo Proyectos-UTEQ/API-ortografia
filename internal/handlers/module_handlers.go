@@ -386,7 +386,7 @@ func (h *ModuleHandler) GenerateTest(c *fiber.Ctx) error {
 	})
 }
 
-func (h *ModuleHandler) GetTest(c *fiber.Ctx) error {
+func (h *ModuleHandler) GetTestByID(c *fiber.Ctx) error {
 
 	testId, err := c.ParamsInt("id")
 	if err != nil {
@@ -591,8 +591,8 @@ func (h *ModuleHandler) FinishTest(c *fiber.Ctx) error {
 	return c.JSON(finishTest)
 }
 
-// GetMyTest recupera todos los test de un usuario en un módulo específico.
-func (h *ModuleHandler) GetMyTest(c *fiber.Ctx) error {
+// GetMyTestsByModule recupera todos los test de un usuario en un módulo específico.
+func (h *ModuleHandler) GetMyTestsByModule(c *fiber.Ctx) error {
 	claims := utils.GetClaims(c)
 	idModule, err := c.ParamsInt("id")
 	if err != nil {

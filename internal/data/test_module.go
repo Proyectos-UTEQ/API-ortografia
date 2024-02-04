@@ -20,14 +20,15 @@ type TestModule struct {
 	Qualification float32
 }
 
-func TestModuleToAPI(module TestModule) types.TestModule {
+func TestModuleToAPI(testModule TestModule) types.TestModule {
 	return types.TestModule{
-		ID:                        module.ID,
-		CreatedAt:                 utils.GetFullDate(module.CreatedAt),
-		Module:                    ModuleToApi(module.Module),
-		Started:                   utils.GetFullDateOrNull(module.Started),
-		Finished:                  utils.GetFullDateOrNull(module.Finished),
-		Qualification:             module.Qualification,
+		ID:                        testModule.ID,
+		CreatedAt:                 utils.GetFullDate(testModule.CreatedAt),
+		ModuleID:                  testModule.Module.ID,
+		Module:                    ModuleToApi(testModule.Module),
+		Started:                   utils.GetFullDateOrNull(testModule.Started),
+		Finished:                  utils.GetFullDateOrNull(testModule.Finished),
+		Qualification:             testModule.Qualification,
 		TestModuleQuestionAnswers: nil,
 	}
 }
@@ -62,14 +63,14 @@ func GenerateTestForStudent(userid uint, moduleID uint) (testId uint, err error)
 		return 0, result.Error
 	}
 
-	// Selecionamos 10 preguntas aleatorias del modulo.
+	// Seleccionamos 10 preguntas aleatorias del módulo.
 	questions, err := GenerateQuestions(moduleID, 10)
 	if err != nil {
 		return 0, result.Error
 	}
 
-	// asignamos las preguntas asignadas a la respuesta del usuario, y el puntaje.
-	// en la respuesta del usuario se dejara blanca la respuesta del usuario.
+	// Asignamos las preguntas asignadas a la respuesta del usuario, y el puntaje.
+	// En la respuesta del usuario se dejará blanca la respuesta del usuario.
 	answerUser := make([]AnswerUser, 0)
 	for i := range questions {
 		answerUser = append(answerUser, AnswerUser{

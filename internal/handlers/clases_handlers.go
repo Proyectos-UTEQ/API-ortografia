@@ -73,7 +73,7 @@ func (h *ClassesHandler) NewClasses(c *fiber.Ctx) error {
 }
 
 func (h *ClassesHandler) GetClassesByTeacher(c *fiber.Ctx) error {
-	// traer todas las clases basándonos en el profesor que las solicita.
+	// Recuperar todas las clases basándonos en el profesor que las solicita.
 	//claims := utils.GetClaims(c)
 
 	idTeacher, err := c.ParamsInt("id")
@@ -87,4 +87,40 @@ func (h *ClassesHandler) GetClassesByTeacher(c *fiber.Ctx) error {
 
 	classesAPI := data.ClassesToAPI(classes)
 	return c.Status(fiber.StatusOK).JSON(classesAPI)
+}
+
+func (h *ClassesHandler) GetClassesArchivedByTeacher(c *fiber.Ctx) error {
+	// Recuperar todas las clases basándonos en el profesor que las solicita.
+	//claims := utils.GetClaims(c)
+
+	idTeacher, err := c.ParamsInt("id")
+
+	classes, err := data.GetClassesArchivedByTeacherID(uint(idTeacher))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	classesAPI := data.ClassesToAPI(classes)
+	return c.Status(fiber.StatusOK).JSON(classesAPI)
+}
+
+// ArchiveClassByID Archivar clase por el ID.
+func (h *ClassesHandler) ArchiveClassByID(c *fiber.Ctx) error {
+
+	// Recuperamos el ID de la clase.
+	idClass, err := c.ParamsInt("id")
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	// Actualizamos el registro de la clase
+	err = data.ArchiveClass(uint(idClass))
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	// Respondemos con un OK.
+	return c.SendStatus(fiber.StatusOK)
 }
