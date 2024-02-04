@@ -75,6 +75,28 @@ func RegisterClass(classAPI types.Class) (id uint, err error) {
 	return class.ID, nil
 }
 
+func UpdateClassByID(classAPI types.Class) error {
+
+	// Actualizamos la clase.
+	var class Class
+	class.ID = classAPI.ID
+	result := db.DB.Model(&class).Select("teacher_id", "name", "course_id", "paralelo", "academic_period", "description", "img_back_url").Updates(Class{
+		TeacherID:      classAPI.TeacherID,
+		Name:           classAPI.Name,
+		CourseID:       classAPI.CourseID,
+		Paralelo:       classAPI.Paralelo,
+		AcademicPeriod: classAPI.AcademicPeriod,
+		Description:    classAPI.Description,
+		ImgBackURL:     classAPI.ImgBackURL,
+		Archived:       classAPI.Archived,
+	})
+
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
 func GetClassByID(id uint) (Class, error) {
 	var class Class
 	class.ID = id
