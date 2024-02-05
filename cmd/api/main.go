@@ -138,8 +138,8 @@ func main() {
 	// Routes for GPT AI.
 	gptHandlers := handlers.NewGPTHandler(config)
 	gptGroup := api.Group("/gpt", jwtHandler.JWTMiddleware, handlers.Authorization("admin", "teacher", "student"))
-	gptGroup.Get("/generate-question", gptHandlers.GenerateQuestion)
-	gptGroup.Get("/generate-response", gptHandlers.GenerateResponse)
+	gptGroup.Post("/generate-question", gptHandlers.GenerateQuestion)
+	gptGroup.Post("/generate-response", gptHandlers.GenerateResponse)
 
 	// Routes for upload files.
 	upload.Post("/", jwtHandler.JWTMiddleware, uploadHandler.UploadFiles)
