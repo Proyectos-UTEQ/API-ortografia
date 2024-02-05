@@ -5,7 +5,6 @@ import "errors"
 type GPT struct {
 	Context      string `json:"context"`
 	TypeQuestion string `json:"type_question"` // true_false, multi_choice_text, multi_choice_abc, complete_word, order_word
-	Server       string `json:"server"`        // chatgptapi or gpts4u
 }
 
 func (g *GPT) Validate() error {
@@ -19,10 +18,6 @@ func (g *GPT) Validate() error {
 
 	if g.TypeQuestion != "true_false" && g.TypeQuestion != "multi_choice_text" && g.TypeQuestion != "multi_choice_abc" && g.TypeQuestion != "complete_word" && g.TypeQuestion != "order_word" {
 		return errors.New("type_question must be one of: true_false, multi_choice_text, multi_choice_abc, complete_word, order_word")
-	}
-
-	if g.Server == "" {
-		return errors.New("server is required")
 	}
 
 	return nil

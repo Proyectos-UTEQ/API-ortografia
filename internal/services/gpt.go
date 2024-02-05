@@ -78,7 +78,7 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 							"select_mode": {
 								Type:        jsonschema.String,
 								Enum:        []string{"single", "multiple"},
-								Description: "El modo de seleccionar las opciones, solo se puede elegir entre single o multiple",
+								Description: "El modo de seleccionar las opciones, solo se puede elegir entre single o multiple, en caso de seleccionar single en el campo correct_answer.text_options solo debe ir una respuesta, en caso de seleccionar multiple en el campo correct_answer.text_options debe ir una lista de respuestas",
 							},
 							"text_options": {
 								Type: jsonschema.Array,
