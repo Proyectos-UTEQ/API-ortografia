@@ -74,23 +74,16 @@ func main() {
 		AllowHeaders: "",
 	}))
 
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("Hola, utiliza postman para probar la API")
+	})
+
 	// Create handlers
 	userHandler := handlers.NewUserHandler(config)
 	jwtHandler := handlers.NewJWTHandler(config)
 	moduleHandler := handlers.NewModuleHandler(config)
 
 	api := app.Group("/api")
-
-	api.Get("/prueba", func(c *fiber.Ctx) error {
-		gpt := services.NewGPT("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")
-		respuesta, err := gpt.GPTTest("Generame 10 preguntas sobre el tema de la universidad")
-		if err != nil {
-			log.Println(err)
-			return c.SendStatus(500)
-		}
-
-		return c.SendString(respuesta)
-	})
 
 	//student := api.Group("/students", jwtHandler.JWTMiddleware, handlers.Authorization("student"))
 
@@ -146,6 +139,7 @@ func main() {
 	gptHandlers := handlers.NewGPTHandler(config)
 	gptGroup := api.Group("/gpt", jwtHandler.JWTMiddleware, handlers.Authorization("admin", "teacher"))
 	gptGroup.Get("/generate-question", gptHandlers.GenerateQuestion)
+	gptGroup.Get("/generate-response", gptHandlers.GenerateResponse)
 
 	// Routes for upload files.
 	upload.Post("/", jwtHandler.JWTMiddleware, uploadHandler.UploadFiles)

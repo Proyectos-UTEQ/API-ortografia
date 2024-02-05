@@ -25,10 +25,6 @@ func (g *GPT) Validate() error {
 		return errors.New("server is required")
 	}
 
-	if g.Server != "chatgptapi" && g.Server != "gpts4u" {
-		return errors.New("server must be one of: chatgptapi, newchatgpt")
-	}
-
 	return nil
 }
 
@@ -37,4 +33,12 @@ type ResponseIA struct {
 	FinishReason string `json:"finish_reason"`
 	Model        string `json:"model"`
 	Server       string `json:"server"`
+}
+
+type RequestGPT struct {
+	Request string `json:"request"`
+}
+
+type ResponseGPT struct {
+	Response string `json:"response"`
 }

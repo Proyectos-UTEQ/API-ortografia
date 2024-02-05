@@ -13,7 +13,7 @@ import (
 )
 
 const SchemeJson = `{
-    "module_id": 2,
+    "module_id": 0,
     "text_root": "enunciado de la pregunta",
     "difficulty": 1,
     "type_question": "order_word",
@@ -29,7 +29,7 @@ const SchemeJson = `{
         "text_to_complete": []
     }
 
-	estos seria si estubiera en interface de typescript
+	estos seria si estuviera en interface de typescript
 
 	export interface Question {
 		module_id:       number;
