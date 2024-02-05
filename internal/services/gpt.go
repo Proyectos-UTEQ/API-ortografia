@@ -61,7 +61,7 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 				Properties: map[string]jsonschema.Definition{
 					"text_root": {
 						Type:        jsonschema.String,
-						Description: "El enunciado de la pregunta",
+						Description: "El enunciado de la pregunta, la pregunta debe ser corta y muy entendible por un niño. por ejemplo ¿En las palabras esdrújula donde llevan tilde?",
 					},
 					"difficulty": {
 						Type:        jsonschema.Integer,
@@ -99,11 +99,11 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 					},
 					"correct_answer": {
 						Type:        jsonschema.Object,
-						Description: "La respuesta correcta, este campo solo se llena en caso de que el tipo de pregunta sea true_false, multi_choice_text, multi_choice_abc, complete_word, order_word",
+						Description: "La respuesta correcta para la pregunta que esta en el enunciado, este campo solo se llena en caso de que el tipo de pregunta sea true_false, multi_choice_text, multi_choice_abc, complete_word, order_word",
 						Properties: map[string]jsonschema.Definition{
 							"true_or_false": {
 								Type:        jsonschema.Boolean,
-								Description: "Si la respuesta es correcta o no",
+								Description: "Si la respuesta es correcta o no, en caso de ser type_question true_false",
 							},
 							"text_options": {
 								Type: jsonschema.Array,
@@ -122,14 +122,14 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 						},
 					},
 				},
-				Required: []string{"text_root", "difficulty", "type_question"},
+				Required: []string{"text_root", "difficulty", "type_question", "options", "correct_answer"},
 			},
 		},
 	}
 
 	// creamos un dialogo
 	dialogMessage := []openai.ChatCompletionMessage{
-		{Role: openai.ChatMessageRoleUser, Content: fmt.Sprintf("Generame una pregunta de tipo %s para el texto: %s", typeQuestion, text)},
+		{Role: openai.ChatMessageRoleUser, Content: fmt.Sprintf("Generame una pregunta de tipo %s, las preguntas las debes sacar del siguiente texto: %s", typeQuestion, text)},
 	}
 
 	// Iniciamos la comunicación
