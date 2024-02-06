@@ -150,6 +150,7 @@ func main() {
 	classesGroup.Post("/", handlers.Authorization("teacher", "admin"), classesHandler.NewClasses)
 	classesGroup.Put("/:id", handlers.Authorization("teacher", "admin"), classesHandler.UpdateClassByID)
 	classesGroup.Put("/:id/archive", handlers.Authorization("teacher", "admin"), classesHandler.ArchiveClassByID)
+	classesGroup.Post("/subscribe", handlers.Authorization("student"), classesHandler.SuscribeClass)
 	api.Get("/professors/:id/classes", jwtHandler.JWTMiddleware, handlers.Authorization("teacher"), classesHandler.GetClassesByTeacher)
 	api.Get("/professors/:id/classes/archived", jwtHandler.JWTMiddleware, handlers.Authorization("teacher"), classesHandler.GetClassesArchivedByTeacher)
 

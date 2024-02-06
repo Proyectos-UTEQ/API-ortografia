@@ -166,3 +166,29 @@ func (h *ClassesHandler) ArchiveClassByID(c *fiber.Ctx) error {
 	// Respondemos con un OK.
 	return c.SendStatus(fiber.StatusOK)
 }
+
+// SuscribeClass Suscribirse a una clase por parte del usuario.
+func (h *ClassesHandler) SuscribeClass(c *fiber.Ctx) error {
+	var reqSuscribe types.ReqSubscription
+	if err := c.BodyParser(&reqSuscribe); err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+	err := reqSuscribe.Validate()
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	claims := utils.GetClaims(c)
+	id, err := data.EnrollUser(claims.UserAPI.ID, reqSuscribe.Code)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"id": id,
+	})
+}
