@@ -192,3 +192,21 @@ func (h *ClassesHandler) SuscribeClass(c *fiber.Ctx) error {
 		"id": id,
 	})
 }
+
+// GetClassesSubscribedByStudent Obtener clases suscritas por el estudiante.
+func (h *ClassesHandler) GetClassesSubscribedByStudent(c *fiber.Ctx) error {
+	// recuperamos los claims
+	claims := utils.GetClaims(c)
+
+	// Recuperamos las clases suscritas solo por el ID del estudiante.
+	clases, err := data.GetClassesSubscribedByStudentID(claims.UserAPI.ID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	classesAPI := data.ClassesToAPI(clases)
+
+	return c.Status(fiber.StatusOK).JSON(classesAPI)
+}
