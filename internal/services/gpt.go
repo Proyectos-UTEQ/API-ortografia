@@ -1,6 +1,7 @@
 package services
 
 import (
+	"Proyectos-UTEQ/api-ortografia/internal/data"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
 	"context"
 	"encoding/json"
@@ -46,6 +47,54 @@ func (g *ServiceGPT) GenerateResponse(msg string) (string, error) {
 	msgGPT := rest.Choices[0].Message.Content
 
 	return msgGPT, nil
+}
+
+func (g *ServiceGPT) GenerateFeedbackForQuestion(answerUser *data.AnswerUser) error {
+	client := openai.NewClient(g.config.GetString("APP_OPENAI_API_KEY"))
+
+	dialogMessage := []openai.ChatCompletionMessage{
+		{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: "Eres un asistente para estudiante de escuela, donde los estudiantes están aprendiendo ortografía. La respuestas que me debes que dar debe solo tener entre 100 a 150 caracteres.",
+		},
+	}
+
+	switch answerUser.Question.TypeQuestion {
+	case "true_or_false":
+		dialogMessage = append(dialogMessage, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleUser,
+			Content: fmt.Sprintf("Necesito que me des retroalimentación para la pregunta, respuesta correcta y la respuesta del estudiante, a continuación te dejo los datos. Pregunta: %s. Respuesta correcta: %t. Respuesta del estudiante: %t", answerUser.Question.TextRoot, answerUser.Question.CorrectAnswer.TrueOrFalse, answerUser.Answer.TrueOrFalse),
+		})
+	case "multi_choice_text":
+		dialogMessage = append(dialogMessage, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleUser,
+			Content: fmt.Sprintf("Necesito que me des retroalimentación para la pregunta, respuesta correcta y la respuesta del estudiante, a continuación te dejo los datos. Pregunta: %s. Respuesta correcta: %s. Respuesta del estudiante: %s", answerUser.Question.TextRoot, answerUser.Question.CorrectAnswer.TextOptions, answerUser.Answer.TextOptions),
+		})
+	case "complete_word":
+		dialogMessage = append(dialogMessage, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleUser,
+			Content: fmt.Sprintf("Necesito que me des retroalimentación para la pregunta de completación, respuesta correcta y la respuesta del estudiante, a continuación te dejo los datos. Pregunta: %s. Respuesta correcta: %s. Respuesta del estudiante: %s", answerUser.Question.TextRoot, answerUser.Question.CorrectAnswer.TextToComplete, answerUser.Answer.TextToComplete),
+		})
+	case "order_word":
+		dialogMessage = append(dialogMessage, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleUser,
+			Content: fmt.Sprintf("Necesito que me des retroalimentación para la pregunta de orden de palabras, respuesta correcta y la respuesta del estudiante, a continuación te dejo los datos. Pregunta: %s. Respuesta correcta: %s. Respuesta del estudiante: %s", answerUser.Question.TextRoot, answerUser.Question.CorrectAnswer.TextOptions, answerUser.Answer.TextOptions),
+		})
+	}
+
+	resp, err := client.CreateChatCompletion(
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model:    openai.GPT3Dot5Turbo,
+			Messages: dialogMessage,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	answerUser.Feedback = resp.Choices[0].Message.Content
+	return nil
 }
 
 func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.Question, error) {

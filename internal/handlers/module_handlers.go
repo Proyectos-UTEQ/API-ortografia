@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/data"
+	"Proyectos-UTEQ/api-ortografia/internal/services"
 	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
 	"fmt"
 	"log"
+	"math/rand"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -447,7 +449,7 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 		answerUserDB.IsCorrect = answerUserDB.Question.CorrectAnswer.TrueOrFalse == answerUserDB.Answer.TrueOrFalse
 		if answerUserDB.IsCorrect {
 			answerUserDB.Score = 10
-			answerUserDB.Feedback = "Respuesta correcta"
+			answerUserDB.Feedback = "Sigue adelante"
 		} else {
 			answerUserDB.Score = 0
 			answerUserDB.Feedback = "Respuesta incorrecta"
@@ -463,7 +465,7 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 			} else {
 				answerUserDB.IsCorrect = utils.ContainsString(answerUserDB.Question.CorrectAnswer.TextOptions, answerUserDB.Answer.TextOptions[0])
 				if answerUserDB.IsCorrect {
-					answerUserDB.Feedback = "Respuesta correcta"
+					answerUserDB.Feedback = "Sigue adelante"
 					answerUserDB.Score = 10
 				} else {
 					answerUserDB.Feedback = "Respuesta incorrecta"
@@ -492,10 +494,10 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 				count := len(answerUserDB.Question.CorrectAnswer.TextOptions) - points
 				answerUserDB.Feedback = fmt.Sprintf("Te faltó seleccionar %d", count)
 			} else {
-				answerUserDB.Feedback = "Respuesta correcta"
+				answerUserDB.Feedback = "Sigue adelante"
 			}
 			//if answerUserDB.IsCorrect {
-			//	answerUserDB.Feedback = "Respuesta correcta"
+			//	answerUserDB.Feedback = "Sigue adelante"
 			//} else {
 			//	answerUserDB.Feedback = "Respuesta incorrecta"
 			//}
@@ -518,7 +520,11 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 		answerUserDB.IsCorrect = points == len(textToCompleteCorrect)
 		pointsForEachCorrectAnswer := 10 / len(textToCompleteCorrect)
 		answerUserDB.Score = float32(pointsForEachCorrectAnswer * points)
-		answerUserDB.Feedback = "Respuesta correcta"
+		if answerUserDB.IsCorrect {
+			answerUserDB.Feedback = "Sigue adelante"
+		} else {
+			answerUserDB.Feedback = "Respuesta incorrecta"
+		}
 
 	case "order_word":
 		// analizamos que la respuesta del usuario sea igual que las opciones correctas
@@ -537,7 +543,7 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 			if correctAnswer == textToCompleteUser[i] {
 				answerUserDB.IsCorrect = true
 				answerUserDB.Score = 10
-				answerUserDB.Feedback = "Respuesta correcta"
+				answerUserDB.Feedback = "Sigue adelante"
 				continue
 			} else {
 				answerUserDB.IsCorrect = false
@@ -551,6 +557,24 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 		answerUserDB.IsCorrect = false
 		answerUserDB.Score = 0
 		answerUserDB.Feedback = ""
+	}
+
+	if !answerUserDB.IsCorrect {
+		err = services.NewGPT(h.config).GenerateFeedbackForQuestion(&answerUserDB)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"success": "error",
+				"error":   err.Error(),
+			})
+		}
+	} else {
+		mensajesMotivadores := []string{
+			"¡Buen trabajo!",
+			"¡Muy bien!",
+			"¡Sigue adelante!",
+			"¡Genial!",
+		}
+		answerUserDB.Feedback = mensajesMotivadores[rand.Intn(len(mensajesMotivadores))]
 	}
 
 	// Actualizar cambios en la base de datos.
