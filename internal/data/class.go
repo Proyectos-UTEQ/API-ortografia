@@ -144,7 +144,7 @@ func GetClassesSubscribedByStudentID(studentID uint) ([]Class, error) {
 
 func GetStudentsForClassID(classID uint) ([]User, error) {
 	var students []User
-	result := db.DB.Joins("JOIN matriculas ON matriculas.user_id = users.id").Where("matriculas.class_id = ?", classID).Find(&students)
+	result := db.DB.Joins("JOIN matriculas ON matriculas.user_id = users.id").Where("matriculas.class_id = ? and matriculas.deleted_at is null", classID).Find(&students)
 	if result.Error != nil {
 		return students, result.Error
 	}
