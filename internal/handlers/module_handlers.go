@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand"
 	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/viper"
@@ -158,7 +159,7 @@ func (h *ModuleHandler) GetModulesForTeacher(c *fiber.Ctx) error {
 		})
 	}
 
-	modulesApi := data.ModulesToAPI(modules, h.config.GetString("APP_HOST"))
+	modulesApi := data.ModulesToAPI(modules)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data":    modulesApi,
@@ -191,7 +192,7 @@ func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
 		})
 	}
 
-	modulesApi := data.ModulesToAPI(modules, h.config.GetString("APP_HOST"))
+	modulesApi := data.ModulesToAPI(modules)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data":    modulesApi,
@@ -226,7 +227,7 @@ func (h *ModuleHandler) GetModuleWithIsSubscribed(c *fiber.Ctx) error {
 		})
 	}
 
-	modulesApi := data.ModuleUserSubcriptionToApi(modules)
+	modulesApi := data.ModuleUserSubToApi(modules)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data":    modulesApi,
@@ -304,7 +305,7 @@ func (h *ModuleHandler) Subscriptions(c *fiber.Ctx) error {
 		})
 	}
 
-	modulesApi := data.ModulesToAPI(modules, h.config.GetString("APP_HOST"))
+	modulesApi := data.ModulesToAPI(modules)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data":    modulesApi,
@@ -631,4 +632,38 @@ func (h *ModuleHandler) GetMyTestsByModule(c *fiber.Ctx) error {
 	testsAPI := data.TestsModuleToAPI(tests)
 
 	return c.JSON(testsAPI)
+}
+
+// GetPointsStudentsForModule recupera todos los puntajes de un usuario con base en todos los modules.
+func (h *ModuleHandler) GetPointsStudentsForModule(c *fiber.Ctx) error {
+
+	// Recuperar de los query params las fechas start y end y el límite de elementos.
+	startDate := c.Query("start", time.Now().AddDate(0, -1, 0).Format("2006-01-02"))
+	endDate := c.Query("end", time.Now().AddDate(0, 0, 1).Format("2006-01-02")) // un día más para que se incluya la fecha de fin
+	limit := c.QueryInt("limit", 10)
+
+	start, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		log.Println(err)
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+	end, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		log.Println(err)
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	// Comparar las fechas.
+	// La fecha inició debe ser anterior a la fecha fin.
+	if start.After(end) {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	lista, err := data.StudentPointsList(start, end, limit)
+	if err != nil {
+		log.Println(err)
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(lista)
 }

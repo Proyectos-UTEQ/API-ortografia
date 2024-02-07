@@ -87,6 +87,9 @@ func main() {
 
 	//student := api.Group("/students", jwtHandler.JWTMiddleware, handlers.Authorization("student"))
 
+	statisticsGroup := api.Group("/statistics")
+	statisticsGroup.Get("/points-module", moduleHandler.GetPointsStudentsForModule)
+
 	auth := api.Group("/auth")
 	// Routes for auth users
 	auth.Post("/sign-in", userHandler.HandlerSignin)
