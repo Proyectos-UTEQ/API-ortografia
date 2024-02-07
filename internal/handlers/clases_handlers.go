@@ -210,3 +210,24 @@ func (h *ClassesHandler) GetClassesSubscribedByStudent(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(classesAPI)
 }
+
+func (h *ClassesHandler) GetStudentsByClass(c *fiber.Ctx) error {
+
+	idClass, err := c.ParamsInt("id")
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	// Recuperamos los estudiantes
+	students, err := data.GetStudentsForClassID(uint(idClass))
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	// Convertimos a API
+	studentsAPI := data.UsersToAPI(students)
+
+	return c.JSON(fiber.Map{
+		"students": studentsAPI,
+	})
+}
