@@ -364,5 +364,11 @@ func StudentPointsList(start, end time.Time, limit int) ([]types.PointsUserForMo
 	if result.Error != nil {
 		return nil, result.Error
 	}
+
+	for i := range pointsList {
+		if pointsList[i].URLAvatar == "" {
+			pointsList[i].URLAvatar = fmt.Sprintf("https://ui-avatars.com/api/?name=%s&background=5952A2&color=fff&size=128", pointsList[i].FirstName+pointsList[i].LastName)
+		}
+	}
 	return pointsList, nil
 }
