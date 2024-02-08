@@ -135,7 +135,7 @@ func ArchiveClass(id uint) error {
 
 func GetClassesSubscribedByStudentID(studentID uint) ([]Class, error) {
 	var classes []Class
-	result := db.DB.Preload("CreateBy").Preload("Teacher").Joins("JOIN matriculas ON matriculas.class_id = class.id").Where("matriculas.user_id = ?", studentID).Find(&classes)
+	result := db.DB.Preload("CreateBy").Preload("Teacher").Joins("JOIN matriculas ON matriculas.class_id = class.id").Where("matriculas.user_id = ? and matriculas.deleted_at is null", studentID).Find(&classes)
 	if result.Error != nil {
 		return classes, result.Error
 	}
