@@ -72,7 +72,7 @@ func main() {
 
 	// configuració de cors
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://localhost:5173",
+		AllowOrigins:     "*",
 		AllowHeaders:     "",
 		AllowCredentials: true,
 	}))
