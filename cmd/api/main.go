@@ -6,6 +6,7 @@ import (
 	"Proyectos-UTEQ/api-ortografia/internal/handlers"
 	"Proyectos-UTEQ/api-ortografia/internal/services"
 	"fmt"
+	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,6 +21,7 @@ func main() {
 	config.AutomaticEnv()
 
 	config.SetDefault("APP_PORT", "3000")
+	config.SetDefault("PORT", "3000")
 	config.SetDefault("APP_ENV", "development")
 
 	// Read the config file
@@ -70,8 +72,9 @@ func main() {
 
 	// configuració de cors
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "",
+		AllowOrigins:     "http://localhost:5173",
+		AllowHeaders:     "",
+		AllowCredentials: true,
 	}))
 
 	app.Get("/", func(c *fiber.Ctx) error {
@@ -80,6 +83,8 @@ func main() {
 
 	// Create handlers
 	userHandler := handlers.NewUserHandler(config)
+	authHandler := handlers.NewAuthHandler(config)
+	authHandler.ConfigProvider()
 	jwtHandler := handlers.NewJWTHandler(config)
 	moduleHandler := handlers.NewModuleHandler(config)
 
@@ -96,6 +101,10 @@ func main() {
 	auth.Post("/sign-up", userHandler.HandlerSignup)
 	auth.Post("/reset-password", userHandler.HandlerResetPassword) // se encarga de enviar el correo electronico al usuario
 	auth.Put("/change-password", userHandler.HandlerChangePassword)
+
+	auth.Get("/google", adaptor.HTTPHandlerFunc(authHandler.BeginAuthGoogle))
+	auth.Get("/google/callback", adaptor.HTTPHandlerFunc(authHandler.GetAuthCallbackFunction))
+	auth.Get("/google/success", adaptor.HTTPHandlerFunc(authHandler.GetAuthSuccessFunction))
 
 	module := api.Group("/module", jwtHandler.JWTMiddleware) // solo con JWT se tiene acceso.
 	module.Put("/:id", handlers.Authorization("teacher", "admin"), moduleHandler.UpdateModule)
@@ -161,7 +170,7 @@ func main() {
 	api.Get("/professors/:id/classes/archived", jwtHandler.JWTMiddleware, handlers.Authorization("teacher"), classesHandler.GetClassesArchivedByTeacher)
 
 	go services.TelegramBot(config)
-	err = app.Listen(":" + config.GetString("APP_PORT"))
+	err = app.Listen(":" + config.GetString("PORT"))
 	if err != nil {
 		log.Println(err)
 	}

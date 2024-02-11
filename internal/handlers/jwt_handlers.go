@@ -48,7 +48,7 @@ func (h *JWTHandler) JWTMiddleware(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-// controla la autorización de los usuario por rol.
+// Authorization controla la autorización del usuario por rol.
 func Authorization(allowedRoles ...string) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		claims := utils.GetClaims(c)
