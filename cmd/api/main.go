@@ -21,7 +21,7 @@ func main() {
 	config.AutomaticEnv()
 
 	config.SetDefault("APP_PORT", "3000")
-	config.SetDefault("PORT", "3000")
+	config.SetDefault("PORT", "8080")
 	config.SetDefault("APP_ENV", "development")
 
 	// Read the config file
