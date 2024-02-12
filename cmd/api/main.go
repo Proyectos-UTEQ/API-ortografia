@@ -142,6 +142,7 @@ func main() {
 	moduleQuestionGroup.Get("/", questionHandler.GetQuestionsForModule)
 	moduleQuestionGroup.Delete("/:idquestion", questionHandler.DeleteQuestion)
 	moduleQuestionGroup.Put("/:idquestion", questionHandler.UpdateQuestion)
+	moduleQuestionGroup.Get("/activities", questionHandler.GetActivityForModule)
 
 	// Routes for upload
 	upload := api.Group("/uploads")
