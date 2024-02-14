@@ -44,7 +44,18 @@ func (g *GPTHandler) GenerateImage(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(req)
+	ia := services.NewGPT(g.config)
+
+	url, err := ia.GenerateImage(req.Request)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"url": url,
+	})
 }
 
 func (g *GPTHandler) GenerateQuestion(c *fiber.Ctx) error {

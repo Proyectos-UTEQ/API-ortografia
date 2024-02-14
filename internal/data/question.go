@@ -192,7 +192,7 @@ func GetActivityForModule(paginated *types.Paginated, moduleID uint) ([]types.Ac
 
 	// Recuperación de datos
 	result := db.DB.Model(&Question{}).
-		Select("questions.id as id, questions.type_question as type_question, concat(users.first_name, ' ', users.last_name)  as created_by, questions.created_at as created_at, questions.updated_at as updated_at, questions.difficulty as difficulty").
+		Select("questions.id as id, questions.text_root as text_root, questions.type_question as type_question, concat(users.first_name, ' ', users.last_name)  as created_by, questions.created_at as created_at, questions.updated_at as updated_at, questions.difficulty as difficulty").
 		Joins("JOIN modules ON modules.id = questions.module_id").
 		Joins("JOIN users ON users.id = modules.created_by_id").
 		Where("questions.module_id = ?", moduleID).

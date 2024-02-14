@@ -206,7 +206,27 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 	return pregunta, nil
 }
 
-func (g *ServiceGPT) GenerateImage(text string) error {
+func (g *ServiceGPT) GenerateImage(text string) (string, error) {
 
-	return nil
+	KEY := g.config.GetString("APP_OPENAI_API_KEY")
+	c := openai.NewClient(KEY)
+	ctx := context.Background()
+
+	reqUrl := openai.ImageRequest{
+		Prompt:         text,
+		Model:          openai.CreateImageModelDallE3,
+		Size:           openai.CreateImageSize1024x1024,
+		ResponseFormat: openai.CreateImageResponseFormatURL,
+		N:              1,
+		Quality:        openai.CreateImageQualityStandard,
+	}
+
+	respUrl, err := c.CreateImage(ctx, reqUrl)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println(respUrl.Data[0].URL)
+
+	return respUrl.Data[0].URL, nil
 }

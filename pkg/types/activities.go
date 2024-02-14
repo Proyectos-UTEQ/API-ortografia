@@ -9,6 +9,7 @@ type Activities struct {
 	CreatedAt    *string `json:"created_at"`
 	UpdatedAt    *string `json:"updated_at"`
 	Difficulty   int     `json:"difficulty"`
+	TextRoot     string  `json:"text_root"`
 }
 
 //*Nombre del tipo de actividad (type_question)
