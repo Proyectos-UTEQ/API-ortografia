@@ -38,15 +38,20 @@ func (g *GPTHandler) GenerateResponse(c *fiber.Ctx) error {
 	})
 }
 
+type CreateImage struct {
+	Prompt       string `json:"prompt"`
+	VersionModel int    `json:"version_model"`
+}
+
 func (g *GPTHandler) GenerateImage(c *fiber.Ctx) error {
-	var req types.RequestGPT
+	var req CreateImage
 	if err := c.BodyParser(&req); err != nil {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	ia := services.NewGPT(g.config)
 
-	url, err := ia.GenerateImage(req.Request)
+	url, err := ia.GenerateImage(req.Prompt, req.VersionModel)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

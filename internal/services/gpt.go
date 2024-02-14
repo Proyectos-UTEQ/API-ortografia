@@ -3,12 +3,22 @@ package services
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/data"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
+	"bytes"
+	"cloud.google.com/go/storage"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	openai "github.com/sashabaranov/go-openai"
 	"github.com/sashabaranov/go-openai/jsonschema"
 	"github.com/spf13/viper"
+	"image/png"
+	"time"
+)
+
+const (
+	NAME_BUCKET = "poliword-bucket-2"
 )
 
 type ServiceGPT struct {
@@ -206,27 +216,85 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 	return pregunta, nil
 }
 
-func (g *ServiceGPT) GenerateImage(text string) (string, error) {
+func (g *ServiceGPT) GenerateImage(text string, model int) (string, error) {
 
 	KEY := g.config.GetString("APP_OPENAI_API_KEY")
 	c := openai.NewClient(KEY)
 	ctx := context.Background()
+	modelSelect := ""
+	switch model {
+	case 2:
+		modelSelect = openai.CreateImageModelDallE2
+	case 3:
+		modelSelect = openai.CreateImageModelDallE3
+	default:
+		modelSelect = openai.CreateImageModelDallE2
+	}
 
-	reqUrl := openai.ImageRequest{
+	reqBase64 := openai.ImageRequest{
 		Prompt:         text,
-		Model:          openai.CreateImageModelDallE3,
+		Model:          modelSelect,
 		Size:           openai.CreateImageSize1024x1024,
-		ResponseFormat: openai.CreateImageResponseFormatURL,
+		ResponseFormat: openai.CreateImageResponseFormatB64JSON,
 		N:              1,
 		Quality:        openai.CreateImageQualityStandard,
 	}
 
-	respUrl, err := c.CreateImage(ctx, reqUrl)
+	respBase64, err := c.CreateImage(ctx, reqBase64)
 	if err != nil {
 		return "", err
 	}
 
-	fmt.Println(respUrl.Data[0].URL)
+	imgBytes, err := base64.StdEncoding.DecodeString(respBase64.Data[0].B64JSON)
+	if err != nil {
+		return "", err
+	}
 
-	return respUrl.Data[0].URL, nil
+	r := bytes.NewReader(imgBytes)
+	imgData, err := png.Decode(r)
+	if err != nil {
+		return "", err
+	}
+
+	// Creamos el cliente para el bucket
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	defer client.Close()
+
+	// construimos el nombre del archivo.
+	objectName := fmt.Sprintf("ia_dalle_%d_%s_%s.png", model, time.Now().Format("2006-01-02"), uuid.NewString())
+
+	// Abrir un escritor para google cloud.
+	wc := client.Bucket(NAME_BUCKET).Object(objectName).NewWriter(ctx)
+	//wc.ContentType = "image/png"
+	//wc.Metadata = map[string]string{
+	//	"x-goog-meta-test": "data",
+	//}
+
+	defer wc.Close()
+
+	// En caso de querer guardar en el file system del backend
+	//file, err := os.Create("example.png")
+	//if err != nil {
+	//	return "", err
+	//}
+	//defer file.Close()
+
+	if err := png.Encode(wc, imgData); err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+
+	//if _, err := io.Copy(wc, file); err != nil {
+	//	fmt.Printf("io.Copy failed: %v\n", err)
+	//	return "", err
+	//}
+	fmt.Println("The image was saved as example.png")
+
+	// construimos la url del objeto
+	objectURL := fmt.Sprintf("https://storage.googleapis.com/%s/%s", NAME_BUCKET, objectName)
+	return objectURL, nil
 }
