@@ -2,6 +2,8 @@ package data
 
 import (
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
+	"math/rand"
+	"time"
 
 	"github.com/lib/pq"
 )
@@ -22,9 +24,15 @@ const (
 )
 
 func QuestionAnswerToAPI(questionAnswer Options) types.Options {
+	rand.Seed(time.Now().UnixNano())
+	shuffledArray := make([]string, len(questionAnswer.TextOptions))
+	copy(shuffledArray, questionAnswer.TextOptions)
+	rand.Shuffle(len(shuffledArray), func(i, j int) {
+		shuffledArray[i], shuffledArray[j] = shuffledArray[j], shuffledArray[i]
+	})
 	return types.Options{
 		SelectMode:     string(questionAnswer.SelectMode),
-		TextOptions:    questionAnswer.TextOptions,
+		TextOptions:    shuffledArray,
 		TextToComplete: questionAnswer.TextToComplete,
 		Hind:           questionAnswer.Hind,
 	}

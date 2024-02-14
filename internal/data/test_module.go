@@ -125,6 +125,7 @@ func TestByID(testid uint) (types.TestModule, error) {
 		Finished:      utils.GetFullDateOrNull(test.Finished),
 		Qualification: test.Qualification,
 	}
+	// TODO: las preguntas de tipo selecion multiple, se debe desordenar las opciones.
 
 	// recuperamos las respuestas del usuario.
 	for i := range answerUser {
