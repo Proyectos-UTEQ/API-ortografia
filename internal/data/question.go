@@ -209,3 +209,13 @@ func GetActivityForModule(paginated *types.Paginated, moduleID uint) ([]types.Ac
 
 	return activities, &paginatedDetails, result.Error
 }
+
+func GetQuestionByID(id uint) (*Question, error) {
+	var question Question
+
+	result := db.DB.Preload("CorrectAnswer").Where("id = ?", id).First(&question)
+	if result.Error != nil {
+		return nil, fmt.Errorf("error al recuperar la pregunta")
+	}
+	return &question, nil
+}

@@ -196,21 +196,6 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 	}
 
 	msg := resp.Choices[0].Message.ToolCalls[0].Function.Arguments
-	fmt.Println(msg)
-
-	//data := resp.Choices[0].Message.FunctionCall.Arguments
-	//fmt.Println(data)
-	//question := resp.Choices[0].Message.Content
-	//
-	//startIndex := strings.Index(question, "{")
-	//if startIndex == -1 {
-	//	return nil, errors.New("error en la respuesta")
-	//}
-	//endIndex := strings.LastIndex(question, "}") + 1
-	//
-	//jsonString := question[startIndex:endIndex]
-	//
-	//fmt.Println(jsonString)
 
 	pregunta := &types.Question{}
 	err = json.Unmarshal([]byte(msg), pregunta)
@@ -219,4 +204,9 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 	}
 
 	return pregunta, nil
+}
+
+func (g *ServiceGPT) GenerateImage(text string) error {
+
+	return nil
 }

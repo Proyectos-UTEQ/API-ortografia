@@ -169,3 +169,21 @@ func (h *QuestionHandler) GetActivityForModule(c *fiber.Ctx) error {
 		"details": details,
 	})
 }
+
+func (h *QuestionHandler) GetQuestionByID(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	question, err := data.GetQuestionByID(uint(id))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	questionAPI := data.QuestionToAPI(*question)
+
+	return c.JSON(questionAPI)
+}

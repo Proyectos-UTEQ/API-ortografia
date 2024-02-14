@@ -38,6 +38,15 @@ func (g *GPTHandler) GenerateResponse(c *fiber.Ctx) error {
 	})
 }
 
+func (g *GPTHandler) GenerateImage(c *fiber.Ctx) error {
+	var req types.RequestGPT
+	if err := c.BodyParser(&req); err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(req)
+}
+
 func (g *GPTHandler) GenerateQuestion(c *fiber.Ctx) error {
 	var reqContext types.GPT
 
