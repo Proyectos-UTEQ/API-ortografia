@@ -17,7 +17,7 @@ type Question struct {
 }
 
 func (q *Question) Validate() error {
-	if q.TextRoot == "" {
+	if len(q.TextRoot) < 1 {
 		return fmt.Errorf("the text root cannot be empty")
 	}
 
@@ -58,9 +58,9 @@ func (q *Question) Validate() error {
 	}
 
 	if q.TypeQuestion == "complete_word" {
-		if q.Options.TextToComplete == "" {
-			return fmt.Errorf("the text to complete cannot be empty")
-		}
+		//if q.Options.TextToComplete == "" {
+		//	return fmt.Errorf("the text to complete cannot be empty")
+		//}
 
 		if len(q.CorrectAnswer.TextToComplete) == 0 {
 			return fmt.Errorf("the correct answer cannot be empty")

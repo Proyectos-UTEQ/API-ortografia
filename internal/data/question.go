@@ -3,6 +3,9 @@ package data
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/db"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
+	"errors"
+	"fmt"
+	"math"
 
 	"github.com/lib/pq"
 	"gorm.io/gorm"
@@ -164,4 +167,55 @@ func GenerateQuestions(moduleID uint, limit int) ([]Question, error) {
 		return nil, result.Error
 	}
 	return questions, nil
+}
+
+// GetActivityForModule Recuperamos todas las preguntas que pertenezcan al módulo para transformarla a una actividad
+func GetActivityForModule(paginated *types.Paginated, moduleID uint) ([]types.Activities, *types.PagintaedDetails, error) {
+	// SQL
+	//SELECT q.id, q.type_question, u.first_name, q.created_at, q.updated_at, q.difficulty FROM questions q
+	//INNER JOIN modules m ON q.module_id = m.id
+	//INNER JOIN users u ON u.id = m.created_by_id
+	//WHERE q.module_id = 21;
+
+	var activities []types.Activities
+	var paginatedDetails types.PagintaedDetails
+
+	// Recuperar el total de elementos
+	db.DB.Model(&Question{}).
+		Joins("JOIN modules ON modules.id = questions.module_id").
+		Joins("JOIN users ON users.id = modules.created_by_id").
+		Where("questions.module_id = ?", moduleID).
+		Count(&paginatedDetails.TotalItems)
+
+	paginatedDetails.Page = paginated.Page
+	paginatedDetails.TotalPage = int64(math.Ceil(float64(paginatedDetails.TotalItems) / float64(paginated.Limit)))
+
+	// Recuperación de datos
+	result := db.DB.Model(&Question{}).
+		Select("questions.id as id, questions.text_root as text_root, questions.type_question as type_question, concat(users.first_name, ' ', users.last_name)  as created_by, questions.created_at as created_at, questions.updated_at as updated_at, questions.difficulty as difficulty").
+		Joins("JOIN modules ON modules.id = questions.module_id").
+		Joins("JOIN users ON users.id = modules.created_by_id").
+		Where("questions.module_id = ?", moduleID).
+		Order(fmt.Sprintf("%s %s", paginated.Sort, paginated.Order)).
+		Limit(paginated.Limit).
+		Offset((paginated.Page - 1) * paginated.Limit).
+		Find(&activities)
+
+	if result.Error != nil {
+		return nil, nil, errors.New("error al realizar la consulta")
+	}
+
+	paginatedDetails.ItemsPerPage = len(activities)
+
+	return activities, &paginatedDetails, result.Error
+}
+
+func GetQuestionByID(id uint) (*Question, error) {
+	var question Question
+
+	result := db.DB.Preload("CorrectAnswer").Where("id = ?", id).First(&question)
+	if result.Error != nil {
+		return nil, fmt.Errorf("error al recuperar la pregunta")
+	}
+	return &question, nil
 }

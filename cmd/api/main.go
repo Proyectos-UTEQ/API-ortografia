@@ -6,6 +6,7 @@ import (
 	"Proyectos-UTEQ/api-ortografia/internal/handlers"
 	"Proyectos-UTEQ/api-ortografia/internal/services"
 	"fmt"
+	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,6 +21,7 @@ func main() {
 	config.AutomaticEnv()
 
 	config.SetDefault("APP_PORT", "3000")
+	config.SetDefault("PORT", "8080")
 	config.SetDefault("APP_ENV", "development")
 
 	// Read the config file
@@ -70,16 +72,28 @@ func main() {
 
 	// configuració de cors
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "",
+		AllowOrigins:     "*",
+		AllowHeaders:     "",
+		AllowCredentials: true,
 	}))
+
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("Hola, utiliza postman para probar la API")
+	})
 
 	// Create handlers
 	userHandler := handlers.NewUserHandler(config)
+	authHandler := handlers.NewAuthHandler(config)
+	authHandler.ConfigProvider()
 	jwtHandler := handlers.NewJWTHandler(config)
 	moduleHandler := handlers.NewModuleHandler(config)
 
 	api := app.Group("/api")
+
+	//student := api.Group("/students", jwtHandler.JWTMiddleware, handlers.Authorization("student"))
+
+	statisticsGroup := api.Group("/statistics")
+	statisticsGroup.Get("/points-module", moduleHandler.GetPointsStudentsForModule)
 
 	auth := api.Group("/auth")
 	// Routes for auth users
@@ -87,6 +101,10 @@ func main() {
 	auth.Post("/sign-up", userHandler.HandlerSignup)
 	auth.Post("/reset-password", userHandler.HandlerResetPassword) // se encarga de enviar el correo electronico al usuario
 	auth.Put("/change-password", userHandler.HandlerChangePassword)
+
+	auth.Get("/google", adaptor.HTTPHandlerFunc(authHandler.BeginAuthGoogle))
+	auth.Get("/google/callback", adaptor.HTTPHandlerFunc(authHandler.GetAuthCallbackFunction))
+	auth.Get("/google/success", adaptor.HTTPHandlerFunc(authHandler.GetAuthSuccessFunction))
 
 	module := api.Group("/module", jwtHandler.JWTMiddleware) // solo con JWT se tiene acceso.
 	module.Put("/:id", handlers.Authorization("teacher", "admin"), moduleHandler.UpdateModule)
@@ -107,13 +125,14 @@ func main() {
 	// Routes for modules
 	// Crea un modulo.
 	module.Post("/", handlers.Authorization("teacher", "admin"), moduleHandler.CreateModuleForTeacher)
-	module.Get("/:id", moduleHandler.GetModuleByID) // Recupera un modulo por el ID
+	module.Get("/:id", moduleHandler.GetModuleByID) // Recupera un módulo por el ID
 
-	// Rutas para los test de los modulos.
-	module.Post("/:id/test", handlers.Authorization("student"), moduleHandler.GenerateTest)
-	module.Get("/:id/test/my-tests", handlers.Authorization("student"), moduleHandler.GetMyTest)
-	module.Get("/test/:id", handlers.Authorization("student"), moduleHandler.GetTest)
-	module.Put("/validate-answer/:answer_user_id", handlers.Authorization("student"), moduleHandler.ValidationAnswerForTestModule)
+	// Rutas para los test de los módulos.
+	testModule := module.Group("/:id/test", handlers.Authorization("student"))
+	testModule.Post("/", moduleHandler.GenerateTest)
+	testModule.Get("/my-tests", moduleHandler.GetMyTestsByModule)
+	module.Get("/test/:id", moduleHandler.GetTestByID)
+	module.Put("/test/validate-answer/:answer_user_id", handlers.Authorization("student"), moduleHandler.ValidationAnswerForTestModule)
 	module.Put("/test/:id/finish", handlers.Authorization("student"), moduleHandler.FinishTest)
 
 	// Routes for questions
@@ -123,6 +142,8 @@ func main() {
 	moduleQuestionGroup.Get("/", questionHandler.GetQuestionsForModule)
 	moduleQuestionGroup.Delete("/:idquestion", questionHandler.DeleteQuestion)
 	moduleQuestionGroup.Put("/:idquestion", questionHandler.UpdateQuestion)
+	moduleQuestionGroup.Get("/activities", questionHandler.GetActivityForModule)
+	module.Get("/question/:id", questionHandler.GetQuestionByID)
 
 	// Routes for upload
 	upload := api.Group("/uploads")
@@ -130,15 +151,29 @@ func main() {
 
 	// Routes for GPT AI.
 	gptHandlers := handlers.NewGPTHandler(config)
-	gptGroup := api.Group("/gpt", jwtHandler.JWTMiddleware, handlers.Authorization("admin", "teacher"))
-	gptGroup.Get("/generate-question", gptHandlers.GenerateQuestion)
+	gptGroup := api.Group("/gpt", jwtHandler.JWTMiddleware, handlers.Authorization("admin", "teacher", "student"))
+	gptGroup.Post("/generate-question", gptHandlers.GenerateQuestion)
+	gptGroup.Post("/generate-response", gptHandlers.GenerateResponse)
+	gptGroup.Post("/generate-image", gptHandlers.GenerateImage)
 
 	// Routes for upload files.
 	upload.Post("/", jwtHandler.JWTMiddleware, uploadHandler.UploadFiles)
 	upload.Static("/", "./uploads")
 
+	classesHandler := handlers.NewClassesHandler(config)
+	classesGroup := api.Group("/classes", jwtHandler.JWTMiddleware)
+	classesGroup.Post("/", handlers.Authorization("teacher", "admin"), classesHandler.NewClasses)
+	classesGroup.Put("/:id", handlers.Authorization("teacher", "admin"), classesHandler.UpdateClassByID)
+	classesGroup.Put("/:id/archive", handlers.Authorization("teacher", "admin"), classesHandler.ArchiveClassByID)
+	classesGroup.Post("/subscribe", handlers.Authorization("student"), classesHandler.SuscribeClass)
+	classesGroup.Delete("/:id/unsubscribe", handlers.Authorization("student"), classesHandler.UnsubscribeClass)
+	classesGroup.Get("/subscribed", handlers.Authorization("student"), classesHandler.GetClassesSubscribedByStudent)
+	classesGroup.Get("/:id/students", classesHandler.GetStudentsByClass)
+	api.Get("/professors/:id/classes", jwtHandler.JWTMiddleware, handlers.Authorization("teacher"), classesHandler.GetClassesByTeacher)
+	api.Get("/professors/:id/classes/archived", jwtHandler.JWTMiddleware, handlers.Authorization("teacher"), classesHandler.GetClassesArchivedByTeacher)
+
 	go services.TelegramBot(config)
-	err = app.Listen(":" + config.GetString("APP_PORT"))
+	err = app.Listen(":" + config.GetString("PORT"))
 	if err != nil {
 		log.Println(err)
 	}

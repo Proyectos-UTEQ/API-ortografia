@@ -15,7 +15,7 @@ COPY . .
 RUN go build -o main cmd/api/main.go
 
 # Exponer el puerto por el que la aplicación será accesible
-EXPOSE 3000
+EXPOSE 8080
 
 # Ejecutar la aplicación
 CMD ["./main"]

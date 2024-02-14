@@ -72,6 +72,9 @@ func UserToAPI(user User) *types.UserAPI {
 func UsersToAPI(users []User) []types.UserAPI {
 	var usersApi []types.UserAPI
 	for _, user := range users {
+		if user.URLAvatar == "" {
+			user.URLAvatar = fmt.Sprintf("https://ui-avatars.com/api/?name=%s&background=5952A2&color=fff&size=128", user.FirstName)
+		}
 		usersApi = append(usersApi, *UserToAPI(user))
 	}
 	return usersApi

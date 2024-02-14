@@ -2,11 +2,14 @@ package handlers
 
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/data"
+	"Proyectos-UTEQ/api-ortografia/internal/services"
 	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
 	"fmt"
 	"log"
+	"math/rand"
 	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/viper"
@@ -156,7 +159,7 @@ func (h *ModuleHandler) GetModulesForTeacher(c *fiber.Ctx) error {
 		})
 	}
 
-	modulesApi := data.ModulesToAPI(modules, h.config.GetString("APP_HOST"))
+	modulesApi := data.ModulesToAPI(modules)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data":    modulesApi,
@@ -189,7 +192,7 @@ func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
 		})
 	}
 
-	modulesApi := data.ModulesToAPI(modules, h.config.GetString("APP_HOST"))
+	modulesApi := data.ModulesToAPI(modules)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data":    modulesApi,
@@ -224,7 +227,7 @@ func (h *ModuleHandler) GetModuleWithIsSubscribed(c *fiber.Ctx) error {
 		})
 	}
 
-	modulesApi := data.ModuleUserSubcriptionToApi(modules)
+	modulesApi := data.ModuleUserSubToApi(modules)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data":    modulesApi,
@@ -302,7 +305,7 @@ func (h *ModuleHandler) Subscriptions(c *fiber.Ctx) error {
 		})
 	}
 
-	modulesApi := data.ModulesToAPI(modules, h.config.GetString("APP_HOST"))
+	modulesApi := data.ModulesToAPI(modules)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data":    modulesApi,
@@ -386,7 +389,7 @@ func (h *ModuleHandler) GenerateTest(c *fiber.Ctx) error {
 	})
 }
 
-func (h *ModuleHandler) GetTest(c *fiber.Ctx) error {
+func (h *ModuleHandler) GetTestByID(c *fiber.Ctx) error {
 
 	testId, err := c.ParamsInt("id")
 	if err != nil {
@@ -447,7 +450,7 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 		answerUserDB.IsCorrect = answerUserDB.Question.CorrectAnswer.TrueOrFalse == answerUserDB.Answer.TrueOrFalse
 		if answerUserDB.IsCorrect {
 			answerUserDB.Score = 10
-			answerUserDB.Feedback = "Respuesta correcta"
+			answerUserDB.Feedback = "Sigue adelante"
 		} else {
 			answerUserDB.Score = 0
 			answerUserDB.Feedback = "Respuesta incorrecta"
@@ -463,7 +466,7 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 			} else {
 				answerUserDB.IsCorrect = utils.ContainsString(answerUserDB.Question.CorrectAnswer.TextOptions, answerUserDB.Answer.TextOptions[0])
 				if answerUserDB.IsCorrect {
-					answerUserDB.Feedback = "Respuesta correcta"
+					answerUserDB.Feedback = "Sigue adelante"
 					answerUserDB.Score = 10
 				} else {
 					answerUserDB.Feedback = "Respuesta incorrecta"
@@ -492,10 +495,10 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 				count := len(answerUserDB.Question.CorrectAnswer.TextOptions) - points
 				answerUserDB.Feedback = fmt.Sprintf("Te faltó seleccionar %d", count)
 			} else {
-				answerUserDB.Feedback = "Respuesta correcta"
+				answerUserDB.Feedback = "Sigue adelante"
 			}
 			//if answerUserDB.IsCorrect {
-			//	answerUserDB.Feedback = "Respuesta correcta"
+			//	answerUserDB.Feedback = "Sigue adelante"
 			//} else {
 			//	answerUserDB.Feedback = "Respuesta incorrecta"
 			//}
@@ -518,7 +521,11 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 		answerUserDB.IsCorrect = points == len(textToCompleteCorrect)
 		pointsForEachCorrectAnswer := 10 / len(textToCompleteCorrect)
 		answerUserDB.Score = float32(pointsForEachCorrectAnswer * points)
-		answerUserDB.Feedback = "Respuesta correcta"
+		if answerUserDB.IsCorrect {
+			answerUserDB.Feedback = "Sigue adelante"
+		} else {
+			answerUserDB.Feedback = "Respuesta incorrecta"
+		}
 
 	case "order_word":
 		// analizamos que la respuesta del usuario sea igual que las opciones correctas
@@ -537,7 +544,7 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 			if correctAnswer == textToCompleteUser[i] {
 				answerUserDB.IsCorrect = true
 				answerUserDB.Score = 10
-				answerUserDB.Feedback = "Respuesta correcta"
+				answerUserDB.Feedback = "Sigue adelante"
 				continue
 			} else {
 				answerUserDB.IsCorrect = false
@@ -551,6 +558,24 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 		answerUserDB.IsCorrect = false
 		answerUserDB.Score = 0
 		answerUserDB.Feedback = ""
+	}
+
+	if !answerUserDB.IsCorrect {
+		err = services.NewGPT(h.config).GenerateFeedbackForQuestion(&answerUserDB)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"success": "error",
+				"error":   err.Error(),
+			})
+		}
+	} else {
+		mensajesMotivadores := []string{
+			"¡Buen trabajo!",
+			"¡Muy bien!",
+			"¡Sigue adelante!",
+			"¡Genial!",
+		}
+		answerUserDB.Feedback = mensajesMotivadores[rand.Intn(len(mensajesMotivadores))]
 	}
 
 	// Actualizar cambios en la base de datos.
@@ -591,8 +616,8 @@ func (h *ModuleHandler) FinishTest(c *fiber.Ctx) error {
 	return c.JSON(finishTest)
 }
 
-// GetMyTest recupera todos los test de un usuario en un módulo específico.
-func (h *ModuleHandler) GetMyTest(c *fiber.Ctx) error {
+// GetMyTestsByModule recupera todos los test de un usuario en un módulo específico.
+func (h *ModuleHandler) GetMyTestsByModule(c *fiber.Ctx) error {
 	claims := utils.GetClaims(c)
 	idModule, err := c.ParamsInt("id")
 	if err != nil {
@@ -607,4 +632,38 @@ func (h *ModuleHandler) GetMyTest(c *fiber.Ctx) error {
 	testsAPI := data.TestsModuleToAPI(tests)
 
 	return c.JSON(testsAPI)
+}
+
+// GetPointsStudentsForModule recupera todos los puntajes de un usuario con base en todos los modules.
+func (h *ModuleHandler) GetPointsStudentsForModule(c *fiber.Ctx) error {
+
+	// Recuperar de los query params las fechas start y end y el límite de elementos.
+	startDate := c.Query("start", time.Now().AddDate(0, -1, 0).Format("2006-01-02"))
+	endDate := c.Query("end", time.Now().AddDate(0, 0, 1).Format("2006-01-02")) // un día más para que se incluya la fecha de fin
+	limit := c.QueryInt("limit", 10)
+
+	start, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		log.Println(err)
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+	end, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		log.Println(err)
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	// Comparar las fechas.
+	// La fecha inició debe ser anterior a la fecha fin.
+	if start.After(end) {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	lista, err := data.StudentPointsList(start, end, limit)
+	if err != nil {
+		log.Println(err)
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(lista)
 }
