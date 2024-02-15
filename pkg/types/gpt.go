@@ -16,8 +16,8 @@ func (g *GPT) Validate() error {
 		return errors.New("type_question is required")
 	}
 
-	if g.TypeQuestion != "true_false" && g.TypeQuestion != "multi_choice_text" && g.TypeQuestion != "multi_choice_abc" && g.TypeQuestion != "complete_word" && g.TypeQuestion != "order_word" {
-		return errors.New("type_question must be one of: true_false, multi_choice_text, multi_choice_abc, complete_word, order_word")
+	if g.TypeQuestion != QuestionTypeTrueOrFalse && g.TypeQuestion != QuestionTypeMultiChoiceText && g.TypeQuestion != "multi_choice_abc" && g.TypeQuestion != "complete_word" && g.TypeQuestion != "order_word" {
+		return errors.New("type_question must be one of: true_or_false, multi_choice_text, multi_choice_abc, complete_word, order_word")
 	}
 
 	return nil

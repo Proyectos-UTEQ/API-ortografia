@@ -4,13 +4,23 @@ import (
 	"fmt"
 )
 
+const (
+	QuestionTypeTrueOrFalse     = "true_or_false"
+	QuestionTypeMultiChoiceText = "multi_choice_text"
+	QuestionTypeOrderWord       = "order_word"
+)
+
+type Questioner interface {
+	ToQuestion() *Question
+}
+
 type Question struct {
 	ID              uint    `json:"id"`
 	ModuleID        *uint   `json:"module_id,omitempty"`
 	QuestionnaireID *uint   `json:"questionnaire_id,omitempty"`
 	TextRoot        string  `json:"text_root"`
 	Difficulty      int     `json:"difficulty"`
-	TypeQuestion    string  `json:"type_question" validate:"required,oneof=true_false multi_choice_text multi_choice_abc complete_word order_word"`
+	TypeQuestion    string  `json:"type_question" validate:"required,oneof=true_or_false multi_choice_text multi_choice_abc complete_word order_word"`
 	Options         Options `json:"options,omitempty"`
 	CorrectAnswerID *uint   `json:"correct_answer_id,omitempty"`
 	CorrectAnswer   *Answer `json:"correct_answer,omitempty"`

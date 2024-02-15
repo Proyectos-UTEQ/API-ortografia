@@ -114,81 +114,100 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 		Type: openai.ToolTypeFunction,
 		Function: openai.FunctionDefinition{
 			Name:        "generate_question",
-			Description: "Genera una pregunta de tipo true_false, multi_choice_text, multi_choice_abc, complete_word, order_word",
-			Parameters: jsonschema.Definition{
-				Type: jsonschema.Object,
-				Properties: map[string]jsonschema.Definition{
-					"text_root": {
+			Description: "Genera preguntas para el aprendizaje ortografía",
+		},
+	}
+	switch typeQuestion {
+	case types.QuestionTypeTrueOrFalse:
+		t.Function.Parameters = jsonschema.Definition{
+			Type: jsonschema.Object,
+			Properties: map[string]jsonschema.Definition{
+				"text_root": {
+					Type:        jsonschema.String,
+					Description: "El enunciado de la pregunta, la pregunta debe ser de verdadero o falso.",
+				},
+				"difficulty": {
+					Type:        jsonschema.Integer,
+					Description: "El nivel de dificultad de la pregunta, este campo tiene un rango de 1 a 10",
+				},
+				"answer": {
+					Type:        jsonschema.Boolean,
+					Description: "La respuesta correcta de la pregunta",
+				},
+			},
+			Required: []string{"text_root", "difficulty", "answer"},
+		}
+	case types.QuestionTypeMultiChoiceText:
+		t.Function.Parameters = jsonschema.Definition{
+			Type: jsonschema.Object,
+			Properties: map[string]jsonschema.Definition{
+				"text_root": {
+					Type:        jsonschema.String,
+					Description: "El enunciado de la pregunta, la pregunta debe ser corta y muy entendible por un niño. por ejemplo ¿Las palabras agudas llevan tilde en la última sílaba si terminan en vocal, n o s?",
+				},
+				"difficulty": {
+					Type:        jsonschema.Integer,
+					Description: "El nivel de dificultad de la pregunta, este campo tiene un rango de 1 a 10",
+				},
+				"options": {
+					Type:        jsonschema.Array,
+					Description: "Las opciones de la preguntas",
+					Items: &jsonschema.Definition{
 						Type:        jsonschema.String,
-						Description: "El enunciado de la pregunta, la pregunta debe ser corta y muy entendible por un niño. por ejemplo ¿En las palabras esdrújula donde llevan tilde?",
-					},
-					"difficulty": {
-						Type:        jsonschema.Integer,
-						Description: "El nivel de dificultad de la pregunta, este campo tiene un rango de 1 a 10",
-					},
-					"type_question": {
-						Type:        jsonschema.String,
-						Description: "El tipo de pregunta, puede ser true_false, multi_choice_text, multi_choice_abc, complete_word, order_word",
-					},
-					"options": {
-						Type:        jsonschema.Object,
-						Description: "Las opciones de la respuesta, este campo solo se llena en caso de que el tipo de pregunta sea multi_choice_text o multi_choice_abc, order_word",
-						Properties: map[string]jsonschema.Definition{
-							"select_mode": {
-								Type:        jsonschema.String,
-								Enum:        []string{"single", "multiple"},
-								Description: "El modo de seleccionar las opciones, solo se puede elegir entre single o multiple, en caso de seleccionar single en el campo correct_answer.text_options solo debe ir una respuesta, en caso de seleccionar multiple en el campo correct_answer.text_options debe ir una lista de respuestas",
-							},
-							"text_options": {
-								Type: jsonschema.Array,
-								Items: &jsonschema.Definition{
-									Type:        jsonschema.String,
-									Description: "Las opciones de la respuesta, este campo solo se llena en caso de que el tipo de pregunta sea multi_choice_text o multi_choice_abc, order_word",
-								},
-							},
-							"text_to_complete": {
-								Type:        jsonschema.String,
-								Description: "El texto que se va a completar, este campo solo se llena en caso de que el tipo de pregunta sea complete_word",
-							},
-							"hind": {
-								Type:        jsonschema.String,
-								Description: "La pista para resolver la pregunta",
-							},
-						},
-					},
-					"correct_answer": {
-						Type:        jsonschema.Object,
-						Description: "La respuesta correcta para la pregunta que esta en el enunciado, este campo solo se llena en caso de que el tipo de pregunta sea true_false, multi_choice_text, multi_choice_abc, complete_word, order_word",
-						Properties: map[string]jsonschema.Definition{
-							"true_or_false": {
-								Type:        jsonschema.Boolean,
-								Description: "Si la respuesta es correcta o no, en caso de ser type_question true_false",
-							},
-							"text_options": {
-								Type: jsonschema.Array,
-								Items: &jsonschema.Definition{
-									Type:        jsonschema.String,
-									Description: "Las opciones de la respuesta, este campo solo se llena en caso de que el tipo de pregunta sea multi_choice_text o multi_choice_abc, order_word",
-								},
-							},
-							"text_to_complete": {
-								Type: jsonschema.Array,
-								Items: &jsonschema.Definition{
-									Type:        jsonschema.String,
-									Description: "Las opciones de la respuesta, este campo solo se llena en caso de que el tipo de pregunta sea text_to_complete",
-								},
-							},
-						},
+						Description: "La opción de la pregunta",
 					},
 				},
-				Required: []string{"text_root", "difficulty", "type_question", "options", "correct_answer"},
+				"answer": {
+					Type:        jsonschema.String,
+					Description: "La respuesta correcta de la pregunta",
+				},
 			},
-		},
+			Required: []string{"text_root", "difficulty", "options", "answer"},
+		}
+	case types.QuestionTypeOrderWord:
+		t.Function.Parameters = jsonschema.Definition{
+			Type:        jsonschema.Object,
+			Description: "Genera preguntas de orden de palabras",
+			Properties: map[string]jsonschema.Definition{
+				"text_root": {
+					Type:        jsonschema.String,
+					Description: "El enunciado de la pregunta, la pregunta es de tipo order palabras por tal motivo la pregunta debe ser parecido a esto: ¿Ordene las palabras, para formar una oración?",
+				},
+				"difficulty": {
+					Type:        jsonschema.Integer,
+					Description: "El nivel de dificultad de la pregunta, este campo tiene un rango de 1 a 10",
+				},
+				"options": {
+					Type:        jsonschema.Array,
+					Description: "Un array de 3 a 5 palabras que deberán formar una oración, estas opciones debe estar en un orden random",
+					Items: &jsonschema.Definition{
+						Type:        jsonschema.String,
+						Description: "Una de las palabras que se deberá ordenar",
+					},
+				},
+				"answer": {
+					Type:        jsonschema.Array,
+					Description: "Las palabras en el orden correcto, debe ser las mismas palabras que en el array de options",
+					Items: &jsonschema.Definition{
+						Type:        jsonschema.String,
+						Description: "Una de las palabras en el orden correcto",
+					},
+				},
+			},
+			Required: []string{"text_root", "difficulty", "options", "answer"},
+		}
 	}
 
 	// creamos un dialogo
 	dialogMessage := []openai.ChatCompletionMessage{
-		{Role: openai.ChatMessageRoleUser, Content: fmt.Sprintf("Generame una pregunta de tipo %s, las preguntas las debes sacar del siguiente texto: %s", typeQuestion, text)},
+		{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: "Eres un asistente que genera preguntas y respuestas sobre ortografiá",
+		},
+		{
+			Role:    openai.ChatMessageRoleUser,
+			Content: fmt.Sprintf("Te doy un poco de contexto con el siguiente texto: %s", text),
+		},
 	}
 
 	// Iniciamos la comunicación
@@ -206,14 +225,34 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 	}
 
 	msg := resp.Choices[0].Message.ToolCalls[0].Function.Arguments
+	fmt.Println(msg)
 
-	pregunta := &types.Question{}
-	err = json.Unmarshal([]byte(msg), pregunta)
-	if err != nil {
-		return nil, err
+	var pregunta types.Questioner
+	switch typeQuestion {
+	case types.QuestionTypeTrueOrFalse:
+		target := &types.QuestionTrueOrFalse{}
+		err = json.Unmarshal([]byte(msg), target)
+		if err != nil {
+			return nil, err
+		}
+		pregunta = target
+	case types.QuestionTypeMultiChoiceText:
+		target := &types.QuestionMultiChoiceText{}
+		err = json.Unmarshal([]byte(msg), target)
+		if err != nil {
+			return nil, err
+		}
+		pregunta = target
+	case types.QuestionTypeOrderWord:
+		target := &types.QuestionOrderWord{}
+		err = json.Unmarshal([]byte(msg), target)
+		if err != nil {
+			return nil, err
+		}
+		pregunta = target
 	}
 
-	return pregunta, nil
+	return pregunta.ToQuestion(), nil
 }
 
 func (g *ServiceGPT) GenerateImage(text string, model int) (string, error) {
