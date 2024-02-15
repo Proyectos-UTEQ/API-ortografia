@@ -159,6 +159,7 @@ func main() {
 	// Routes for upload files.
 	upload.Post("/", jwtHandler.JWTMiddleware, uploadHandler.UploadFiles)
 	upload.Static("/", "./uploads")
+	upload.Post("/google", jwtHandler.JWTMiddleware, uploadHandler.UploadFileToGoogle)
 
 	classesHandler := handlers.NewClassesHandler(config)
 	classesGroup := api.Group("/classes", jwtHandler.JWTMiddleware)
