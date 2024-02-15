@@ -80,7 +80,7 @@ func (g *GPTHandler) GenerateQuestion(c *fiber.Ctx) error {
 	}
 
 	ia := services.NewGPT(g.config)
-	result, err := ia.GenerateQuestion(reqContext.TypeQuestion, reqContext.Context)
+	result, err := ia.GenerateQuestion(reqContext.TypeQuestion, reqContext.Context, reqContext.ModelVersion)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

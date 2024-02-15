@@ -107,7 +107,7 @@ func (g *ServiceGPT) GenerateFeedbackForQuestion(answerUser *data.AnswerUser) er
 	return nil
 }
 
-func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.Question, error) {
+func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string, model int) (*types.Question, error) {
 	client := openai.NewClient(g.config.GetString("APP_OPENAI_API_KEY"))
 
 	t := openai.Tool{
@@ -225,12 +225,15 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 			Content: fmt.Sprintf("Te doy un poco de contexto con el siguiente texto: %s", text),
 		},
 	}
-
+	modelVersion := openai.GPT3Dot5Turbo
+	if model == 4 {
+		modelVersion = openai.GPT4
+	}
 	// Iniciamos la comunicación
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model:    openai.GPT3Dot5Turbo,
+			Model:    modelVersion,
 			Messages: dialogMessage,
 			Tools:    []openai.Tool{t},
 		},

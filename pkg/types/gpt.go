@@ -5,6 +5,7 @@ import "errors"
 type GPT struct {
 	Context      string `json:"context"`
 	TypeQuestion string `json:"type_question"` // true_false, multi_choice_text, multi_choice_abc, complete_word, order_word
+	ModelVersion int    `json:"model_version"` // 3, 4
 }
 
 func (g *GPT) Validate() error {
@@ -18,6 +19,10 @@ func (g *GPT) Validate() error {
 
 	if g.TypeQuestion != QuestionTypeTrueOrFalse && g.TypeQuestion != QuestionTypeMultiChoiceText && g.TypeQuestion != "multi_choice_abc" && g.TypeQuestion != "complete_word" && g.TypeQuestion != "order_word" {
 		return errors.New("type_question must be one of: true_or_false, multi_choice_text, multi_choice_abc, complete_word, order_word")
+	}
+
+	if g.ModelVersion != 3 && g.ModelVersion != 4 {
+		return errors.New("model_version must be one of: 3, 4")
 	}
 
 	return nil
