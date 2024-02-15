@@ -151,7 +151,7 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 				},
 				"options": {
 					Type:        jsonschema.Array,
-					Description: "Las opciones de la preguntas",
+					Description: "Las opciones de la preguntas, una de las opciones debe ser la correcta.",
 					Items: &jsonschema.Definition{
 						Type:        jsonschema.String,
 						Description: "La opción de la pregunta",
@@ -167,11 +167,11 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 	case types.QuestionTypeOrderWord:
 		t.Function.Parameters = jsonschema.Definition{
 			Type:        jsonschema.Object,
-			Description: "Genera preguntas de orden de palabras",
+			Description: "Genera preguntas de ordenar palabras, para formar una oración. por ejemplo ¿Ordene las palabras, para formar una oración?",
 			Properties: map[string]jsonschema.Definition{
 				"text_root": {
 					Type:        jsonschema.String,
-					Description: "El enunciado de la pregunta, la pregunta es de tipo order palabras por tal motivo la pregunta debe ser parecido a esto: ¿Ordene las palabras, para formar una oración?",
+					Description: "El enunciado de la pregunta, la pregunta es de tipo ordenar palabras por tal motivo la pregunta debe ser parecido a esto: ¿Ordene las palabras, para formar una oración?",
 				},
 				"difficulty": {
 					Type:        jsonschema.Integer,
@@ -179,22 +179,38 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 				},
 				"options": {
 					Type:        jsonschema.Array,
-					Description: "Un array de 3 a 5 palabras que deberán formar una oración, estas opciones debe estar en un orden random",
+					Description: "Un array de 3 a 5 palabras que deberán formar una oración, estas palabras deben de estar en el orden correcto.",
 					Items: &jsonschema.Definition{
 						Type:        jsonschema.String,
 						Description: "Una de las palabras que se deberá ordenar",
 					},
 				},
+			},
+			Required: []string{"text_root", "difficulty", "options"},
+		}
+
+	case types.QuestionTypeCompleteWord:
+		t.Function.Parameters = jsonschema.Definition{
+			Type: jsonschema.Object,
+			Properties: map[string]jsonschema.Definition{
+				"text_root": {
+					Type:        jsonschema.String,
+					Description: "El enunciado de la pregunta, la pregunta es de tipo completar una palabra, por ejemplo: El perro persiguió al __________ por el jardín.",
+				},
+				"difficulty": {
+					Type:        jsonschema.Integer,
+					Description: "El nivel de dificultad de la pregunta, este campo tiene un rango de 1 a 10",
+				},
+				"hind": {
+					Type:        jsonschema.String,
+					Description: "Pista para que el niño pueda completar la palabra",
+				},
 				"answer": {
-					Type:        jsonschema.Array,
-					Description: "Las palabras en el orden correcto, debe ser las mismas palabras que en el array de options",
-					Items: &jsonschema.Definition{
-						Type:        jsonschema.String,
-						Description: "Una de las palabras en el orden correcto",
-					},
+					Type:        jsonschema.String,
+					Description: "Respuesta correcta de la pregunta",
 				},
 			},
-			Required: []string{"text_root", "difficulty", "options", "answer"},
+			Required: []string{"text_root", "difficulty", "hind", "answer"},
 		}
 	}
 
@@ -224,9 +240,15 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 		return nil, err
 	}
 
+	if resp.Choices[0].Message.ToolCalls == nil {
+		return nil, fmt.Errorf("no se pudo generar la respuesta")
+	}
+
 	msg := resp.Choices[0].Message.ToolCalls[0].Function.Arguments
 	fmt.Println(msg)
 
+	// transformamos el string a un struct
+	// el tipo de la variable depende de la pregunta
 	var pregunta types.Questioner
 	switch typeQuestion {
 	case types.QuestionTypeTrueOrFalse:
@@ -245,6 +267,13 @@ func (g *ServiceGPT) GenerateQuestion(typeQuestion string, text string) (*types.
 		pregunta = target
 	case types.QuestionTypeOrderWord:
 		target := &types.QuestionOrderWord{}
+		err = json.Unmarshal([]byte(msg), target)
+		if err != nil {
+			return nil, err
+		}
+		pregunta = target
+	case types.QuestionTypeCompleteWord:
+		target := &types.QuestionCompleteWord{}
 		err = json.Unmarshal([]byte(msg), target)
 		if err != nil {
 			return nil, err

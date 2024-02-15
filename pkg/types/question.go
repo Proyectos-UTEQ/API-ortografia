@@ -8,6 +8,7 @@ const (
 	QuestionTypeTrueOrFalse     = "true_or_false"
 	QuestionTypeMultiChoiceText = "multi_choice_text"
 	QuestionTypeOrderWord       = "order_word"
+	QuestionTypeCompleteWord    = "complete_word"
 )
 
 type Questioner interface {
