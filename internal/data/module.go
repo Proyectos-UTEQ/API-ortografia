@@ -4,8 +4,10 @@ import (
 	"Proyectos-UTEQ/api-ortografia/internal/db"
 	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
+	"errors"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -29,19 +31,18 @@ type Module struct {
 
 type Difficulty string
 
-const (
-	Easy   Difficulty = "easy"
-	Medium Difficulty = "medium"
-	Hard   Difficulty = "hard"
-)
+//const (
+//	Easy   Difficulty = "easy"
+//	Medium Difficulty = "medium"
+//	Hard   Difficulty = "hard"
+//)
 
 func (Module) TableName() string {
 	return "modules"
 }
 
-// convierte las entidades de modulos a tipos de modulos para mostrar en la API REST xD
-func ModulesToAPI(modules []Module, apphost string) []types.Module {
-	// convertimos los modulos a types.modules
+// ModulesToAPI convierte las entidades de módulos a tipos de módulos para mostrar en la API REST xD
+func ModulesToAPI(modules []Module) []types.Module {
 	modulesApi := make([]types.Module, len(modules))
 	for i, module := range modules {
 		modulesApi[i] = ModuleToApi(module)
@@ -49,7 +50,7 @@ func ModulesToAPI(modules []Module, apphost string) []types.Module {
 	return modulesApi
 }
 
-// convertimos un module data a un module type para la API REST.
+// ModuleToApi convertimos un module data a un module type para la API REST.
 func ModuleToApi(module Module) types.Module {
 	return types.Module{
 		ID:        module.ID,
@@ -92,7 +93,7 @@ func DifficultyToFrontend(difficulty string) string {
 
 func RegisterModuleForTeacher(module *types.Module, userid uint) (types.Module, error) {
 
-	moduledb := Module{
+	moduleDB := Module{
 		CreatedByID:      userid,
 		Code:             uuid.NewString(),
 		Title:            module.Title,
@@ -105,19 +106,19 @@ func RegisterModuleForTeacher(module *types.Module, userid uint) (types.Module, 
 		IsPublic:         module.IsPublic,
 	}
 
-	// guardamos el modulos en la db
-	result := db.DB.Create(&moduledb)
+	// guardamos el módulo en la db
+	result := db.DB.Create(&moduleDB)
 	if result.Error != nil {
 		return types.Module{}, result.Error
 	}
 
 	// recuperamos el usuario de la db.
-	result = db.DB.Preload("CreatedBy").First(&moduledb, moduledb.ID)
+	result = db.DB.Preload("CreatedBy").First(&moduleDB, moduleDB.ID)
 	if result.Error != nil {
 		return types.Module{}, result.Error
 	}
 
-	return ModuleToApi(moduledb), nil
+	return ModuleToApi(moduleDB), nil
 
 }
 
@@ -147,7 +148,7 @@ func UpdateModule(module *types.Module) (*Module, error) {
 	return &moduleData, nil
 }
 
-// Se encarga de traer los modulos creado por el profesor.
+// GetModulesForTeacher Se encarga de traer los módulos creados por el profesor.
 func GetModulesForTeacher(paginated *types.Paginated, userid uint) ([]Module, *types.PagintaedDetails, error) {
 
 	var modules []Module
@@ -170,12 +171,13 @@ func GetModulesForTeacher(paginated *types.Paginated, userid uint) ([]Module, *t
 		Offset((paginated.Page - 1) * paginated.Limit).
 		Find(&modules)
 
-	// seteamos la cantidad de items por pagina
+	// establecemos la cantidad de items por página
 	paginatedDetails.ItemsPerPage = len(modules)
 
 	if result.Error != nil {
-		if pgerr, ok := result.Error.(*pgconn.PgError); ok {
-			if pgerr.Code == "42703" {
+		var pgErr *pgconn.PgError
+		if errors.As(result.Error, &pgErr) {
+			if pgErr.Code == "42703" {
 				return nil, nil, fmt.Errorf("columna inexistente: %s", paginated.Sort)
 			}
 		}
@@ -207,8 +209,9 @@ func GetModuleForStudent(paginated *types.Paginated, userid uint) ([]Module, *ty
 		Find(&modules)
 
 	if result.Error != nil {
-		if pgerr, ok := result.Error.(*pgconn.PgError); ok {
-			if pgerr.Code == "42703" {
+		var pgErr *pgconn.PgError
+		if errors.As(result.Error, &pgErr) {
+			if pgErr.Code == "42703" {
 				return nil, nil, fmt.Errorf("columna inexistente: %s", paginated.Sort)
 			}
 		}
@@ -218,10 +221,10 @@ func GetModuleForStudent(paginated *types.Paginated, userid uint) ([]Module, *ty
 	return modules, &paginatedDetails, nil
 }
 
-// Se encarga de traer todos los modulos, sin importar quien los haya creado.
+// GetModule Se encarga de traer todos los módulos, sin importar quien los haya creado.
 func GetModule(paginated *types.Paginated) (modules []Module, details types.PagintaedDetails, err error) {
 
-	// cantidad total de modulos.
+	// cantidad total de módulos.
 	db.DB.
 		Table("modules").
 		Where("title LIKE ?", "%"+paginated.Query+"%").
@@ -231,7 +234,7 @@ func GetModule(paginated *types.Paginated) (modules []Module, details types.Pagi
 	details.Page = paginated.Page
 	details.TotalPage = int64(math.Ceil(float64(details.TotalItems) / float64(paginated.Limit)))
 
-	// Recuperamos los modulos
+	// Recuperamos los módulos
 	result := db.DB.
 		Preload("CreatedBy").
 		Where("title LIKE ?", "%"+paginated.Query+"%").
@@ -240,12 +243,13 @@ func GetModule(paginated *types.Paginated) (modules []Module, details types.Pagi
 		Offset((paginated.Page - 1) * paginated.Limit).
 		Find(&modules)
 
-	// seteamos la cantidad de items por pagina
+	// establecemos la cantidad de items por página
 	details.ItemsPerPage = len(modules)
 
 	if result.Error != nil {
-		if pgerr, ok := result.Error.(*pgconn.PgError); ok {
-			if pgerr.Code == "42703" {
+		var pgErr *pgconn.PgError
+		if errors.As(result.Error, &pgErr) {
+			if pgErr.Code == "42703" {
 				return nil, details, fmt.Errorf("columna inexistente: %s", paginated.Sort)
 			}
 		}
@@ -256,15 +260,15 @@ func GetModule(paginated *types.Paginated) (modules []Module, details types.Pagi
 
 }
 
-// Recupera los datos necesario para un servicio en especifico.
-type ModuleUserSubcription struct {
+// ModuleUserSub Recupera los datos necesário para un servicio en específico.
+type ModuleUserSub struct {
 	Module
 	IsSubscribed bool
 }
 
-// funcione para convertir los modulos que agrega la parte si estan suscritos o no,
+// ModuleUserSubToApi funcioné para convertir los módulos que agrega la parte si están suscritos o no,
 // para utilizarlos en el frontend.
-func ModuleUserSubcriptionToApi(modules []ModuleUserSubcription) []types.ModuleUser {
+func ModuleUserSubToApi(modules []ModuleUserSub) []types.ModuleUser {
 
 	modulesApi := make([]types.ModuleUser, len(modules))
 	for i, module := range modules {
@@ -274,17 +278,17 @@ func ModuleUserSubcriptionToApi(modules []ModuleUserSubcription) []types.ModuleU
 
 }
 
-func ModuleUserToApi(module ModuleUserSubcription) types.ModuleUser {
+func ModuleUserToApi(module ModuleUserSub) types.ModuleUser {
 	return types.ModuleUser{
 		Module:       ModuleToApi(module.Module),
 		IsSubscribed: module.IsSubscribed,
 	}
 }
 
-// Retorna todos los modulos y ademas tiene un campo para saber si el usuario esta suscrito a ese modulo
-func GetModuleWithUserSubscription(paginated *types.Paginated, userid uint) (moduleUser []ModuleUserSubcription, details types.PagintaedDetails, err error) {
+// GetModuleWithUserSubscription Retorna todos los módulos y además tiene un campo para saber si el usuario está suscrito a ese módulo
+func GetModuleWithUserSubscription(paginated *types.Paginated, userid uint) (moduleUser []ModuleUserSub, details types.PagintaedDetails, err error) {
 
-	// cantidad total de modulos.
+	// cantidad total de módulos.
 	db.DB.
 		Table("modules").
 		Where("title LIKE ?", "%"+paginated.Query+"%").
@@ -294,7 +298,7 @@ func GetModuleWithUserSubscription(paginated *types.Paginated, userid uint) (mod
 	details.Page = paginated.Page
 	details.TotalPage = int64(math.Ceil(float64(details.TotalItems) / float64(paginated.Limit)))
 
-	// Recuperamos todos los modulos, y en cada modulo revisamos si el usuario esta suscrito.
+	// Recuperamos todos los módulos, y en cada módulo revisamos si el usuario está suscrito.
 	result := db.DB.
 		Table("modules").
 		Preload("CreatedBy").
@@ -307,12 +311,13 @@ func GetModuleWithUserSubscription(paginated *types.Paginated, userid uint) (mod
 		Offset((paginated.Page - 1) * paginated.Limit).
 		Find(&moduleUser)
 
-	// seteamos la cantidad de items por pagina
+	// establecemos la cantidad de items por página
 	details.ItemsPerPage = len(moduleUser)
 
 	if result.Error != nil {
-		if pgerr, ok := result.Error.(*pgconn.PgError); ok {
-			if pgerr.Code == "42703" {
+		var pgErr *pgconn.PgError
+		if errors.As(result.Error, &pgErr) {
+			if pgErr.Code == "42703" {
 				return nil, details, fmt.Errorf("columna inexistente: %s", paginated.Sort)
 			}
 		}
@@ -323,13 +328,13 @@ func GetModuleWithUserSubscription(paginated *types.Paginated, userid uint) (mod
 
 }
 
-// StudentForModule recupera los estudiantes de un modulo
-func GetStudentsByModule(moduleid uint) ([]User, error) {
+// GetStudentsByModule StudentForModule recupera los estudiantes de un modulo
+func GetStudentsByModule(moduleID uint) ([]User, error) {
 	var users []User
 	result := db.DB.
 		Table("users").
 		Joins("JOIN subscriptions ON subscriptions.user_id = users.id").
-		Where("subscriptions.module_id = ?", moduleid).
+		Where("subscriptions.module_id = ?", moduleID).
 		Find(&users)
 	if result.Error != nil {
 		return nil, result.Error
@@ -344,4 +349,26 @@ func ModuleByID(id uint) (*Module, error) {
 		return nil, result.Error
 	}
 	return &module, nil
+}
+
+// StudentPointsList Recupera una lista de estudiantes con la suma de puntajes que han obtenido en los módulos.
+func StudentPointsList(start, end time.Time, limit int) ([]types.PointsUserForModule, error) {
+	var pointsList []types.PointsUserForModule
+	result := db.DB.Table("test_modules").
+		Select("user_id, sum(test_modules.qualification) as points, users.first_name, users.last_name, users.url_avatar").
+		Joins("JOIN users ON users.id = test_modules.user_id").
+		Where("test_modules.created_at BETWEEN ? AND ?", start, end).
+		Limit(limit).
+		Group("user_id, users.first_name, users.last_name, users.url_avatar").Find(&pointsList)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	for i := range pointsList {
+		if pointsList[i].URLAvatar == "" {
+			pointsList[i].URLAvatar = fmt.Sprintf("https://ui-avatars.com/api/?name=%s&background=5952A2&color=fff&size=128", pointsList[i].FirstName+pointsList[i].LastName)
+		}
+	}
+	return pointsList, nil
 }

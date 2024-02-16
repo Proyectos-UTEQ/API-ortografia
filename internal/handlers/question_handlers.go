@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/data"
+	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/viper"
 )
@@ -135,4 +135,55 @@ func (h *QuestionHandler) UpdateQuestion(c *fiber.Ctx) error {
 	}
 
 	return c.SendStatus(fiber.StatusOK)
+}
+
+// GetActivityForModule Recupera las actividades de un módulo
+// se tiene en cuanta que una actividad es una pregunta, pero tiene embebido el usuario.
+func (h *QuestionHandler) GetActivityForModule(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	// Recuperamos la paginación.
+	var paginated types.Paginated
+	if err := c.QueryParser(&paginated); err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	_ = paginated.Validate()
+
+	activities, details, err := data.GetActivityForModule(&paginated, uint(id))
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	// convertir las fechas a string
+	for i, v := range activities {
+		activities[i].CreatedAt = utils.GetDateOrNullForString(v.CreatedAt)
+		activities[i].UpdatedAt = utils.GetDateOrNullForString(v.UpdatedAt)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data":    activities,
+		"details": details,
+	})
+}
+
+func (h *QuestionHandler) GetQuestionByID(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	question, err := data.GetQuestionByID(uint(id))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	questionAPI := data.QuestionToAPI(*question)
+
+	return c.JSON(questionAPI)
 }
