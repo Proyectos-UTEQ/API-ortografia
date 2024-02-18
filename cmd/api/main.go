@@ -6,10 +6,10 @@ import (
 	"Proyectos-UTEQ/api-ortografia/internal/handlers"
 	"Proyectos-UTEQ/api-ortografia/internal/services"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"log"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/spf13/viper"
 )
