@@ -52,6 +52,10 @@ func ModulesToAPI(modules []Module) []types.Module {
 
 // ModuleToApi convertimos un module data a un module type para la API REST.
 func ModuleToApi(module Module) types.Module {
+
+	if len(module.Code) > 8 {
+		module.Code = module.Code[:8]
+	}
 	return types.Module{
 		ID:        module.ID,
 		CreatedAt: utils.GetDate(module.CreatedAt),
@@ -95,7 +99,7 @@ func RegisterModuleForTeacher(module *types.Module, userid uint) (types.Module, 
 
 	moduleDB := Module{
 		CreatedByID:      userid,
-		Code:             uuid.NewString(),
+		Code:             uuid.NewString()[0:8],
 		Title:            module.Title,
 		ShortDescription: module.ShortDescription,
 		TextRoot:         module.TextRoot,

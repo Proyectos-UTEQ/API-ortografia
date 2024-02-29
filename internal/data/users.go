@@ -102,7 +102,7 @@ func Login(login types.Login) (*types.UserAPI, bool, error) {
 		LastName:     user.LastName,
 		Email:        user.Email,
 		Password:     "",
-		BirthDate:    user.BirthDate.String(),
+		BirthDate:    utils.GetDate(user.BirthDate),
 		PointsEarned: user.PointsEarned,
 		Whatsapp:     user.Whatsapp,
 		Telegram:     user.Telegram,
