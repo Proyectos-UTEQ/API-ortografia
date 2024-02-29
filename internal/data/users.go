@@ -86,13 +86,21 @@ func Login(login types.Login) (*types.UserAPI, bool, error) {
 
 	// Controlar el error de record not found.
 	if result.Error != nil {
-		return nil, false, errors.New("las credenciales son incorrectas")
+		return nil, false, errors.New("Las credenciales son incorrectas")
 	}
 
 	// Comparar las contraseñas con un hash.
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(login.Password))
 	if err != nil {
-		return nil, false, errors.New("las credenciales son incorrectas")
+		return nil, false, errors.New("Las credenciales son incorrectas")
+	}
+
+	if user.Status == PendingApproval {
+		return nil, false, errors.New("El usuario no ha sido aprobado")
+	}
+
+	if user.Status == Blocked {
+		return nil, false, errors.New("El usuario ha sido bloqueado")
 	}
 
 	// Convertir a un usuario api
@@ -272,4 +280,18 @@ func GetAllUsers() ([]types.UserAPI, error) {
 	}
 
 	return UsersToAPI(users), nil
+}
+
+func ChangeStatus(userID uint, active bool) error {
+
+	status := Actived
+	if !active {
+		status = Blocked
+	}
+
+	result := db.DB.Model(&User{}).Where("id = ?", userID).Update("status", status)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
 }

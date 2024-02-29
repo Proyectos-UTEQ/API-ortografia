@@ -112,6 +112,8 @@ func main() {
 
 	// Adminstración de usuarios
 	userGroup.Get("/", handlers.Authorization("admin"), userHandler.GetAllUsers)
+	userGroup.Put("/:id/approved", handlers.Authorization("admin"), userHandler.ActiveUser)
+	userGroup.Put("/:id/blocked", handlers.Authorization("admin"), userHandler.BlockedUser)
 
 	module := api.Group("/module", jwtHandler.JWTMiddleware) // solo con JWT se tiene acceso.
 	module.Put("/:id", handlers.Authorization("teacher", "admin"), moduleHandler.UpdateModule)

@@ -285,3 +285,31 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 
 	return c.JSON(users)
 }
+
+func (h *UserHandler) ActiveUser(c *fiber.Ctx) error {
+	userID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	err = data.ChangeStatus(uint(userID), true)
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
+
+func (h *UserHandler) BlockedUser(c *fiber.Ctx) error {
+	userID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	err = data.ChangeStatus(uint(userID), false)
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
