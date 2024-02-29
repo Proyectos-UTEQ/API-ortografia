@@ -359,7 +359,7 @@ func ModuleByID(id uint) (*Module, error) {
 func StudentPointsList(start, end time.Time, limit int) ([]types.PointsUserForModule, error) {
 	var pointsList []types.PointsUserForModule
 	result := db.DB.Table("test_modules").
-		Select("user_id, sum(test_modules.qualification) as points, users.first_name, users.last_name, users.url_avatar").
+		Select("user_id, ROUND(sum(test_modules.qualification), 2) as points, users.first_name, users.last_name, users.url_avatar").
 		Joins("JOIN users ON users.id = test_modules.user_id").
 		Where("test_modules.created_at BETWEEN ? AND ?", start, end).
 		Limit(limit).
