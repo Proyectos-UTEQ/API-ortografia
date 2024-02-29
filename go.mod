@@ -23,6 +23,7 @@ require (
 	cloud.google.com/go/iam v1.1.6 // indirect
 	cloud.google.com/go/storage v1.38.0 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/blackestwhite/gopenai v0.0.0-20240101211747-e7f16c1a9ec5 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
