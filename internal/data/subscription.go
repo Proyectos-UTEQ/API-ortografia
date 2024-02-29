@@ -27,7 +27,7 @@ func RegisterSubscription(userID uint, code string) (Subscription, error) {
 	var module Module
 	result := db.DB.First(&module, "code LIKE ?", fmt.Sprintf("%s%%", code))
 	if result.RowsAffected == 0 {
-		return Subscription{}, errors.New("el modulo no existe")
+		return Subscription{}, errors.New("El módulo no existe")
 	}
 	if result.Error != nil {
 		return Subscription{}, result.Error
@@ -42,7 +42,7 @@ func RegisterSubscription(userID uint, code string) (Subscription, error) {
 	// Validar si este usuario ya se encuentra suscrito al módulo.
 	result = db.DB.Where("user_id = ? AND module_id = ?", userID, module.ID).First(&sub)
 	if result.Error == nil {
-		return sub, errors.New("el usuario ya se encuentra suscrito al modulo")
+		return sub, errors.New("El usuario ya se encuentra suscrito al módulo")
 	}
 
 	result = db.DB.Create(&sub)
