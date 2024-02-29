@@ -52,6 +52,10 @@ func ModulesToAPI(modules []Module) []types.Module {
 
 // ModuleToApi convertimos un module data a un module type para la API REST.
 func ModuleToApi(module Module) types.Module {
+
+	if len(module.Code) > 8 {
+		module.Code = module.Code[:8]
+	}
 	return types.Module{
 		ID:        module.ID,
 		CreatedAt: utils.GetDate(module.CreatedAt),
@@ -95,7 +99,7 @@ func RegisterModuleForTeacher(module *types.Module, userid uint) (types.Module, 
 
 	moduleDB := Module{
 		CreatedByID:      userid,
-		Code:             uuid.NewString(),
+		Code:             uuid.NewString()[0:8],
 		Title:            module.Title,
 		ShortDescription: module.ShortDescription,
 		TextRoot:         module.TextRoot,
@@ -291,7 +295,7 @@ func GetModuleWithUserSubscription(paginated *types.Paginated, userid uint) (mod
 	// cantidad total de módulos.
 	db.DB.
 		Table("modules").
-		Where("title LIKE ?", "%"+paginated.Query+"%").
+		Where("title LIKE ? AND is_public = true", "%"+paginated.Query+"%").
 		Count(&details.TotalItems)
 
 	// pagina actual y total de paginas.
@@ -304,8 +308,8 @@ func GetModuleWithUserSubscription(paginated *types.Paginated, userid uint) (mod
 		Preload("CreatedBy").
 		Select("modules.* ", "subscriptions.user_id IS NOT NULL as is_subscribed").
 		Joins("LEFT JOIN subscriptions ON subscriptions.module_id = modules.id").
-		Where("title LIKE ?", "%"+paginated.Query+"%").
-		Where("subscriptions.user_id = ? or subscriptions.user_id is null", userid). // where s.user_id = 3 or s.user_id is null
+		Where("title LIKE ? AND is_public = true", "%"+paginated.Query+"%").
+		Where("subscriptions.user_id = ? or subscriptions.user_id is null ", userid). // where s.user_id = 3 or s.user_id is null
 		Order(fmt.Sprintf("%s %s", paginated.Sort, paginated.Order)).
 		Limit(paginated.Limit).
 		Offset((paginated.Page - 1) * paginated.Limit).

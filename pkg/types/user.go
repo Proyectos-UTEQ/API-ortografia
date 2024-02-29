@@ -1,5 +1,7 @@
 package types
 
+import "fmt"
+
 type UserAPI struct {
 	ID                   uint   `json:"id"`
 	FirstName            string `json:"first_name" validate:"required,min=6,max=100"`
@@ -15,6 +17,27 @@ type UserAPI struct {
 	Status               string `json:"status"`
 	TypeUser             string `json:"type_user" validate:"required,oneof=student teacher admin"`
 	PerfilUpdateRequired bool   `json:"perfil_update_required"`
+}
+
+func (user *UserAPI) ValidateUpdateUser() error {
+
+	if user.FirstName == "" {
+		return fmt.Errorf("el nombre es requerido")
+	}
+
+	if user.LastName == "" {
+		return fmt.Errorf("el apellido es requerido")
+	}
+
+	if user.Whatsapp == "" {
+		return fmt.Errorf("el whatsapp es requerido")
+	}
+
+	if user.URLAvatar == "" {
+		return fmt.Errorf("la url del avatar es requerida")
+	}
+
+	return nil
 }
 
 type Login struct {

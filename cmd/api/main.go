@@ -6,10 +6,10 @@ import (
 	"Proyectos-UTEQ/api-ortografia/internal/handlers"
 	"Proyectos-UTEQ/api-ortografia/internal/services"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"log"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/spf13/viper"
 )
@@ -105,6 +105,15 @@ func main() {
 	auth.Get("/google", adaptor.HTTPHandlerFunc(authHandler.BeginAuthGoogle))
 	auth.Get("/google/callback", adaptor.HTTPHandlerFunc(authHandler.GetAuthCallbackFunction))
 	auth.Get("/google/success", adaptor.HTTPHandlerFunc(authHandler.GetAuthSuccessFunction))
+
+	userGroup := api.Group("/users", jwtHandler.JWTMiddleware)
+	userGroup.Get("/me", userHandler.HandlerGetUser)
+	userGroup.Put("/me", userHandler.HandlerUpdateUser)
+
+	// Adminstración de usuarios
+	userGroup.Get("/", handlers.Authorization("admin"), userHandler.GetAllUsers)
+	userGroup.Put("/:id/approved", handlers.Authorization("admin"), userHandler.ActiveUser)
+	userGroup.Put("/:id/blocked", handlers.Authorization("admin"), userHandler.BlockedUser)
 
 	module := api.Group("/module", jwtHandler.JWTMiddleware) // solo con JWT se tiene acceso.
 	module.Put("/:id", handlers.Authorization("teacher", "admin"), moduleHandler.UpdateModule)

@@ -237,3 +237,79 @@ func (h *UserHandler) HandlerChangePassword(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Contraseña actualizada"})
 }
+
+// HandlerGetUser recupera los datos del usuario en base al token.
+func (h *UserHandler) HandlerGetUser(c *fiber.Ctx) error {
+
+	claims := utils.GetClaims(c)
+
+	user, err := data.GetUserByID(claims.UserAPI.ID)
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.JSON(user)
+}
+
+// HandlerUpdateUser actualiza los datos del usuario en base al token.
+func (h *UserHandler) HandlerUpdateUser(c *fiber.Ctx) error {
+	claims := utils.GetClaims(c)
+
+	var user types.UserAPI
+	if err := c.BodyParser(&user); err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	err := user.ValidateUpdateUser()
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	// Actualizamos en la base de datos.
+	err = data.UpdateUserByID(user, claims.UserAPI.ID)
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
+
+// GetAllUsers obtiene todos los usuarios
+func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
+
+	// Obtenemos todos los usuarios de la DB.
+	users, err := data.GetAllUsers()
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.JSON(users)
+}
+
+func (h *UserHandler) ActiveUser(c *fiber.Ctx) error {
+	userID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	err = data.ChangeStatus(uint(userID), true)
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
+
+func (h *UserHandler) BlockedUser(c *fiber.Ctx) error {
+	userID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	err = data.ChangeStatus(uint(userID), false)
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}

@@ -86,13 +86,21 @@ func Login(login types.Login) (*types.UserAPI, bool, error) {
 
 	// Controlar el error de record not found.
 	if result.Error != nil {
-		return nil, false, errors.New("las credenciales son incorrectas")
+		return nil, false, errors.New("Las credenciales son incorrectas")
 	}
 
 	// Comparar las contraseñas con un hash.
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(login.Password))
 	if err != nil {
-		return nil, false, errors.New("las credenciales son incorrectas")
+		return nil, false, errors.New("Las credenciales son incorrectas")
+	}
+
+	if user.Status == PendingApproval {
+		return nil, false, errors.New("El usuario no ha sido aprobado")
+	}
+
+	if user.Status == Blocked {
+		return nil, false, errors.New("El usuario ha sido bloqueado")
 	}
 
 	// Convertir a un usuario api
@@ -102,7 +110,7 @@ func Login(login types.Login) (*types.UserAPI, bool, error) {
 		LastName:     user.LastName,
 		Email:        user.Email,
 		Password:     "",
-		BirthDate:    user.BirthDate.String(),
+		BirthDate:    utils.GetDate(user.BirthDate),
 		PointsEarned: user.PointsEarned,
 		Whatsapp:     user.Whatsapp,
 		Telegram:     user.Telegram,
@@ -196,6 +204,92 @@ func SetTelegramChat(username string, chatid int64) error {
 
 	// actualizar la contraseña en la base de datos.
 	result := db.DB.Model(&User{}).Where("telegram = ?", username).Update("telegram_id", chatid)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
+func GetUserByID(id uint) (*types.UserAPI, error) {
+
+	var user User
+	// Recuperamos el usuario
+	result := db.DB.First(&user, "id = ?", id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	loc, err := time.LoadLocation("America/Guayaquil")
+	if err != nil {
+		return nil, errors.New("error al cargar la zona horaria")
+	}
+
+	fechaLocal := user.BirthDate.In(loc)
+
+	return &types.UserAPI{
+		ID:                   user.ID,
+		FirstName:            user.FirstName,
+		LastName:             user.LastName,
+		Email:                user.Email,
+		BirthDate:            fechaLocal.Format("02/01/2006"),
+		PointsEarned:         user.PointsEarned,
+		Whatsapp:             user.Whatsapp,
+		Telegram:             user.Telegram,
+		TelegramID:           user.TelegramID,
+		URLAvatar:            user.URLAvatar,
+		Status:               string(user.Status),
+		TypeUser:             string(user.TypeUser),
+		PerfilUpdateRequired: user.PerfilUpdateRequired,
+	}, nil
+}
+
+func UpdateUserByID(user types.UserAPI, userid uint) error {
+
+	// Zona horaria de Ecuador
+	loc, err := time.LoadLocation("America/Guayaquil")
+	if err != nil {
+		return errors.New("error al cargar la zona horaria")
+	}
+
+	// formato de fecha: dia-mes-año.
+	birth, err := time.ParseInLocation("02/01/2006", user.BirthDate, loc)
+	if err != nil {
+		return errors.New("la fecha de nacimiento es inválida")
+	}
+
+	result := db.DB.Model(&User{}).Where("id = ?", userid).Updates(User{
+		FirstName:            user.FirstName,
+		LastName:             user.LastName,
+		BirthDate:            birth,
+		Whatsapp:             user.Whatsapp,
+		Telegram:             user.Telegram,
+		URLAvatar:            user.URLAvatar,
+		PerfilUpdateRequired: false,
+	})
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
+func GetAllUsers() ([]types.UserAPI, error) {
+	var users []User
+	result := db.DB.Order("status desc").Find(&users)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return UsersToAPI(users), nil
+}
+
+func ChangeStatus(userID uint, active bool) error {
+
+	status := Actived
+	if !active {
+		status = Blocked
+	}
+
+	result := db.DB.Model(&User{}).Where("id = ?", userID).Update("status", status)
 	if result.Error != nil {
 		return result.Error
 	}
