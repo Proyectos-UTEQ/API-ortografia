@@ -263,3 +263,13 @@ func UpdateUserByID(user types.UserAPI, userid uint) error {
 	}
 	return nil
 }
+
+func GetAllUsers() ([]types.UserAPI, error) {
+	var users []User
+	result := db.DB.Order("status desc").Find(&users)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return UsersToAPI(users), nil
+}

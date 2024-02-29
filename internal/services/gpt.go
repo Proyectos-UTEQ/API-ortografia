@@ -65,7 +65,7 @@ func (g *ServiceGPT) GenerateFeedbackForQuestion(answerUser *data.AnswerUser) er
 	dialogMessage := []openai.ChatCompletionMessage{
 		{
 			Role:    openai.ChatMessageRoleSystem,
-			Content: "Eres un asistente para estudiante de escuela, donde los estudiantes están aprendiendo ortografía. La respuestas que me debes que dar debe solo tener entre 100 a 150 caracteres.",
+			Content: "Eres un asistente para estudiante de escuela, donde los estudiantes están aprendiendo ortografía. La respuestas que me debes que dar debe solo tener entre 150 a 250 caracteres.",
 		},
 	}
 

@@ -251,7 +251,7 @@ func (h *UserHandler) HandlerGetUser(c *fiber.Ctx) error {
 	return c.JSON(user)
 }
 
-// TODO: Servicio para actualizar los datos del usuario.
+// HandlerUpdateUser actualiza los datos del usuario en base al token.
 func (h *UserHandler) HandlerUpdateUser(c *fiber.Ctx) error {
 	claims := utils.GetClaims(c)
 
@@ -272,4 +272,16 @@ func (h *UserHandler) HandlerUpdateUser(c *fiber.Ctx) error {
 	}
 
 	return c.SendStatus(fiber.StatusOK)
+}
+
+// GetAllUsers obtiene todos los usuarios
+func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
+
+	// Obtenemos todos los usuarios de la DB.
+	users, err := data.GetAllUsers()
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.JSON(users)
 }

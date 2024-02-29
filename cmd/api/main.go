@@ -110,6 +110,9 @@ func main() {
 	userGroup.Get("/me", userHandler.HandlerGetUser)
 	userGroup.Put("/me", userHandler.HandlerUpdateUser)
 
+	// Adminstración de usuarios
+	userGroup.Get("/", handlers.Authorization("admin"), userHandler.GetAllUsers)
+
 	module := api.Group("/module", jwtHandler.JWTMiddleware) // solo con JWT se tiene acceso.
 	module.Put("/:id", handlers.Authorization("teacher", "admin"), moduleHandler.UpdateModule)
 	// Lista todos los modulos.
