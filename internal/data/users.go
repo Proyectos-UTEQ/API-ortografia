@@ -201,3 +201,65 @@ func SetTelegramChat(username string, chatid int64) error {
 	}
 	return nil
 }
+
+func GetUserByID(id uint) (*types.UserAPI, error) {
+
+	var user User
+	// Recuperamos el usuario
+	result := db.DB.First(&user, "id = ?", id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	loc, err := time.LoadLocation("America/Guayaquil")
+	if err != nil {
+		return nil, errors.New("error al cargar la zona horaria")
+	}
+
+	fechaLocal := user.BirthDate.In(loc)
+
+	return &types.UserAPI{
+		ID:                   user.ID,
+		FirstName:            user.FirstName,
+		LastName:             user.LastName,
+		Email:                user.Email,
+		BirthDate:            fechaLocal.Format("02/01/2006"),
+		PointsEarned:         user.PointsEarned,
+		Whatsapp:             user.Whatsapp,
+		Telegram:             user.Telegram,
+		TelegramID:           user.TelegramID,
+		URLAvatar:            user.URLAvatar,
+		Status:               string(user.Status),
+		TypeUser:             string(user.TypeUser),
+		PerfilUpdateRequired: user.PerfilUpdateRequired,
+	}, nil
+}
+
+func UpdateUserByID(user types.UserAPI, userid uint) error {
+
+	// Zona horaria de Ecuador
+	loc, err := time.LoadLocation("America/Guayaquil")
+	if err != nil {
+		return errors.New("error al cargar la zona horaria")
+	}
+
+	// formato de fecha: dia-mes-año.
+	birth, err := time.ParseInLocation("02/01/2006", user.BirthDate, loc)
+	if err != nil {
+		return errors.New("la fecha de nacimiento es inválida")
+	}
+
+	result := db.DB.Model(&User{}).Where("id = ?", userid).Updates(User{
+		FirstName:            user.FirstName,
+		LastName:             user.LastName,
+		BirthDate:            birth,
+		Whatsapp:             user.Whatsapp,
+		Telegram:             user.Telegram,
+		URLAvatar:            user.URLAvatar,
+		PerfilUpdateRequired: false,
+	})
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}

@@ -106,6 +106,10 @@ func main() {
 	auth.Get("/google/callback", adaptor.HTTPHandlerFunc(authHandler.GetAuthCallbackFunction))
 	auth.Get("/google/success", adaptor.HTTPHandlerFunc(authHandler.GetAuthSuccessFunction))
 
+	userGroup := api.Group("/users", jwtHandler.JWTMiddleware)
+	userGroup.Get("/me", userHandler.HandlerGetUser)
+	userGroup.Put("/me", userHandler.HandlerUpdateUser)
+
 	module := api.Group("/module", jwtHandler.JWTMiddleware) // solo con JWT se tiene acceso.
 	module.Put("/:id", handlers.Authorization("teacher", "admin"), moduleHandler.UpdateModule)
 	// Lista todos los modulos.

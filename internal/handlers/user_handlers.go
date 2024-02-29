@@ -237,3 +237,39 @@ func (h *UserHandler) HandlerChangePassword(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Contraseña actualizada"})
 }
+
+// HandlerGetUser recupera los datos del usuario en base al token.
+func (h *UserHandler) HandlerGetUser(c *fiber.Ctx) error {
+
+	claims := utils.GetClaims(c)
+
+	user, err := data.GetUserByID(claims.UserAPI.ID)
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.JSON(user)
+}
+
+// TODO: Servicio para actualizar los datos del usuario.
+func (h *UserHandler) HandlerUpdateUser(c *fiber.Ctx) error {
+	claims := utils.GetClaims(c)
+
+	var user types.UserAPI
+	if err := c.BodyParser(&user); err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	err := user.ValidateUpdateUser()
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	// Actualizamos en la base de datos.
+	err = data.UpdateUserByID(user, claims.UserAPI.ID)
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
