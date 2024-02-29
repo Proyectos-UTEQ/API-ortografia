@@ -37,6 +37,7 @@ func AnswerUserToAPI(a AnswerUser) types.AnswerUser {
 	}
 }
 
+// GetAnswerUserByID Recupera la respuesta del usuario, con la pregunta y respuesta correcta de la base de datos.
 func GetAnswerUserByID(id uint) (AnswerUser, error) {
 	var answerUser AnswerUser
 	result := db.DB.Preload("Question.CorrectAnswer").Preload("Answer").First(&answerUser, id)

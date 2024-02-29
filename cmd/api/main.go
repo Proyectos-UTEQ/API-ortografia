@@ -142,6 +142,7 @@ func main() {
 	testModule.Get("/my-tests", moduleHandler.GetMyTestsByModule)
 	module.Get("/test/:id", moduleHandler.GetTestByID)
 	module.Put("/test/validate-answer/:answer_user_id", handlers.Authorization("student"), moduleHandler.ValidationAnswerForTestModule)
+	module.Post("/test/feedback-answer/:answer_user_id", handlers.Authorization("student"), moduleHandler.GetFeedbackAnswerUser)
 	module.Put("/test/:id/finish", handlers.Authorization("student"), moduleHandler.FinishTest)
 
 	// Routes for questions

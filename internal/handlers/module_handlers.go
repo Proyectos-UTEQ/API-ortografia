@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"Proyectos-UTEQ/api-ortografia/internal/data"
-	"Proyectos-UTEQ/api-ortografia/internal/services"
 	"Proyectos-UTEQ/api-ortografia/internal/utils"
 	"Proyectos-UTEQ/api-ortografia/pkg/types"
+	"bufio"
 	"fmt"
+	"github.com/blackestwhite/gopenai"
 	"log"
 	"math/rand"
 	"strconv"
@@ -411,6 +412,95 @@ func (h *ModuleHandler) GetTestByID(c *fiber.Ctx) error {
 
 }
 
+func (h *ModuleHandler) GetFeedbackAnswerUser(c *fiber.Ctx) error {
+
+	// La peticion sera en streaming.
+	c.Set("Content-Type", "text/event-stream")
+	c.Set("Cache-Control", "no-cache")
+	c.Set("Connection", "keep-alive")
+	c.Set("Transfer-Encoding", "chunked")
+
+	// Recuperar los datos de la pregunta respuesta del usuario y respuesta correcta.
+	answerUserID, err := c.ParamsInt("answer_user_id")
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	var answer types.Answer
+	if err := c.BodyParser(&answer); err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	answerUser, err := data.GetAnswerUserByID(uint(answerUserID))
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	// Pasamos las respuestas del usuario al struct AnswerUser
+	answerUser.Answer.TrueOrFalse = answer.TrueOrFalse
+	answerUser.Answer.TextOptions = answer.TextOptions
+	answerUser.Answer.TextToComplete = answer.TextToComplete
+
+	contentQuestion := ""
+	switch answerUser.Question.TypeQuestion {
+	case types.QuestionTypeTrueOrFalse:
+		contentQuestion = fmt.Sprintf("Necesito que me des retroalimentación para la pregunta, respuesta correcta y la respuesta del estudiante, a continuación te dejo los datos. Pregunta: %s. Respuesta correcta: %t. Respuesta del estudiante: %t", answerUser.Question.TextRoot, answerUser.Question.CorrectAnswer.TrueOrFalse, answerUser.Answer.TrueOrFalse)
+	case types.QuestionTypeMultiChoiceText:
+		contentQuestion = fmt.Sprintf("Necesito que me des retroalimentación para la pregunta, respuesta correcta y la respuesta del estudiante, a continuación te dejo los datos. Pregunta: %s. Respuesta correcta: %s. Respuesta del estudiante: %s", answerUser.Question.TextRoot, answerUser.Question.CorrectAnswer.TextOptions, answerUser.Answer.TextOptions)
+	case types.QuestionTypeCompleteWord:
+		contentQuestion = fmt.Sprintf("Necesito que me des retroalimentación para la pregunta de completación, respuesta correcta y la respuesta del estudiante, a continuación te dejo los datos. Pregunta: %s. Respuesta correcta: %s. Respuesta del estudiante: %s", answerUser.Question.TextRoot, answerUser.Question.CorrectAnswer.TextToComplete, answerUser.Answer.TextToComplete)
+	case types.QuestionTypeOrderWord:
+		contentQuestion = fmt.Sprintf("Necesito que me des retroalimentación para la pregunta de orden de palabras, respuesta correcta y la respuesta del estudiante, a continuación te dejo los datos. Pregunta: %s. Respuesta correcta: %s. Respuesta del estudiante: %s", answerUser.Question.TextRoot, answerUser.Question.CorrectAnswer.TextOptions, answerUser.Answer.TextOptions)
+	default:
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	// cliente de GPT
+	client := gopenai.Setup(h.config.GetString("APP_OPENAI_API_KEY"))
+	p := gopenai.ChatCompletionRequestBody{
+		Model: "gpt-3.5-turbo",
+		Messages: []gopenai.Message{
+			{
+				Role:    "system",
+				Content: "Eres un asistente para estudiante de escuela, donde los estudiantes están aprendiendo ortografía. La respuestas que me debes que dar debe solo tener entre 150 a 250 caracteres.",
+			},
+			{
+				Role:    "user",
+				Content: contentQuestion,
+			},
+		},
+		Stream: true,
+	}
+
+	// Crea el canal
+	resultCh, err := client.GenerateChatCompletion(p)
+	if err != nil {
+		fmt.Println(err)
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
+		respuesta := ""
+		// Recuperamos los datos de GPT para enviarlos al cliente.
+		for chunk := range resultCh {
+			msg := fmt.Sprintf("%s", chunk.Choices[0].Delta.Content)
+			fmt.Fprintf(w, "data: %s\n\n", msg)
+			respuesta += msg
+			err := w.Flush()
+			if err != nil {
+				fmt.Println(err)
+				break
+			}
+
+		}
+
+		fmt.Println("respuesta: ", respuesta)
+
+	})
+
+	return nil
+}
+
 func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 	idQuestion, err := c.ParamsInt("answer_user_id")
 	if err != nil {
@@ -561,13 +651,14 @@ func (h *ModuleHandler) ValidationAnswerForTestModule(c *fiber.Ctx) error {
 	}
 
 	if !answerUserDB.IsCorrect {
-		err = services.NewGPT(h.config).GenerateFeedbackForQuestion(&answerUserDB)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"success": "error",
-				"error":   err.Error(),
-			})
-		}
+		//err = services.NewGPT(h.config).GenerateFeedbackForQuestion(&answerUserDB)
+		//if err != nil {
+		//	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		//		"success": "error",
+		//		"error":   err.Error(),
+		//	})
+		//}
+		answerUserDB.Feedback = "Respuesta incorrecta"
 	} else {
 		mensajesMotivadores := []string{
 			"¡Buen trabajo!",
