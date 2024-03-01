@@ -153,14 +153,27 @@ func (h *UserHandler) HandlerResetPassword(c *fiber.Ctx) error {
 	}
 
 	// make message to send
-	messageToSend := fmt.Sprintf(`Hola, %s %s. Haga click en el siguiente enlace para reestablecer su contraseña: http://localhost:3000/reset-password/%s`, user.FirstName, user.LastName, ss)
+	messageToSend := fmt.Sprintf(
+		`Hola, %s %s. Haga click en el siguiente enlace para reestablecer su contraseña: %s/auth/forgot-password?token=%s`,
+		user.FirstName,
+		user.LastName,
+		h.config.GetString("URL_FRONT"), ss)
 
 	emailNotifier := services.NewEmailNotifier(h.config, []string{user.Email}, "Reestablece tu contraseña")
 	telegramNotifier := services.NewTelegramNotifier(h.config, user.TelegramID)
 
-	err = utils.ResetPassword(emailNotifier, messageToSend, "https://app-poliword.onrender.com/auth/forgot-password/"+ss)
+	err = utils.ResetPassword(
+		emailNotifier,
+		messageToSend,
+		fmt.Sprintf("%s/auth/forgot-password/%s", h.config.GetString("URL_FRONT"), ss),
+	)
 	if err != nil {
 		log.Println(err)
+		return c.JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error al enviar el correo electrónico",
+			"data":    err.Error(),
+		})
 	}
 	err = utils.ResetPassword(telegramNotifier, "Presiona el siguiente boton para resetear tu contraseña", "https://app-poliword.onrender.com/auth/forgot-password?token="+ss)
 	if err != nil {
@@ -168,6 +181,30 @@ func (h *UserHandler) HandlerResetPassword(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Revisa tu correo electronico"})
+}
+
+func (h *UserHandler) HandlerChangePasswordInside(c *fiber.Ctx) error {
+	// Recuperamos ls contraseña nueva
+	var changePassword types.ChangePassword
+	if err := c.BodyParser(&changePassword); err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	if len(changePassword.Password) < 6 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "La constraseña debe tener al menos 6 caracteres",
+		})
+	}
+
+	claims := utils.GetClaims(c)
+
+	err := data.UpdatePassword(claims.UserAPI.ID, changePassword.Password)
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func (h *UserHandler) HandlerChangePassword(c *fiber.Ctx) error {
@@ -190,7 +227,7 @@ func (h *UserHandler) HandlerChangePassword(c *fiber.Ctx) error {
 		log.Println("Error al resetear la constraseña", err)
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Revisa los datos de la petición",
+			"message": "El token no es valido",
 		})
 	}
 	claims, ok := token.Claims.(*types.UserClaims)
@@ -198,7 +235,7 @@ func (h *UserHandler) HandlerChangePassword(c *fiber.Ctx) error {
 		log.Println("Error al resetear la constraseña", err)
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Revisa los datos de la petición",
+			"message": "El token no es valido",
 		})
 	}
 
@@ -208,7 +245,7 @@ func (h *UserHandler) HandlerChangePassword(c *fiber.Ctx) error {
 		log.Println("Error al resetear la constraseña", err)
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Revisa los datos de la petición",
+			"message": "El token ya fue utilizado",
 		})
 	}
 

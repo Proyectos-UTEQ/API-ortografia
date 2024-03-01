@@ -101,6 +101,7 @@ func main() {
 	auth.Post("/sign-up", userHandler.HandlerSignup)
 	auth.Post("/reset-password", userHandler.HandlerResetPassword) // se encarga de enviar el correo electronico al usuario
 	auth.Put("/change-password", userHandler.HandlerChangePassword)
+	auth.Put("/change-password/inside", jwtHandler.JWTMiddleware, userHandler.HandlerChangePasswordInside)
 
 	auth.Get("/google", adaptor.HTTPHandlerFunc(authHandler.BeginAuthGoogle))
 	auth.Get("/google/callback", adaptor.HTTPHandlerFunc(authHandler.GetAuthCallbackFunction))
