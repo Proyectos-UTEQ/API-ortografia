@@ -153,14 +153,27 @@ func (h *UserHandler) HandlerResetPassword(c *fiber.Ctx) error {
 	}
 
 	// make message to send
-	messageToSend := fmt.Sprintf(`Hola, %s %s. Haga click en el siguiente enlace para reestablecer su contraseña: http://localhost:3000/reset-password/%s`, user.FirstName, user.LastName, ss)
+	messageToSend := fmt.Sprintf(
+		`Hola, %s %s. Haga click en el siguiente enlace para reestablecer su contraseña: %s/auth/forgot-password?token=%s`,
+		user.FirstName,
+		user.LastName,
+		h.config.GetString("URL_FRONT"), ss)
 
 	emailNotifier := services.NewEmailNotifier(h.config, []string{user.Email}, "Reestablece tu contraseña")
 	telegramNotifier := services.NewTelegramNotifier(h.config, user.TelegramID)
 
-	err = utils.ResetPassword(emailNotifier, messageToSend, "https://app-poliword.onrender.com/auth/forgot-password/"+ss)
+	err = utils.ResetPassword(
+		emailNotifier,
+		messageToSend,
+		fmt.Sprintf("%s/auth/forgot-password/%s", h.config.GetString("URL_FRONT"), ss),
+	)
 	if err != nil {
 		log.Println(err)
+		return c.JSON(fiber.Map{
+			"status":  "error",
+			"message": "Error al enviar el correo electrónico",
+			"data":    err.Error(),
+		})
 	}
 	err = utils.ResetPassword(telegramNotifier, "Presiona el siguiente boton para resetear tu contraseña", "https://app-poliword.onrender.com/auth/forgot-password?token="+ss)
 	if err != nil {
